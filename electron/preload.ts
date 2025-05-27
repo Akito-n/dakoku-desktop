@@ -27,4 +27,25 @@ contextBridge.exposeInMainWorld("ipcRenderer", {
 contextBridge.exposeInMainWorld("electronAPI", {
   openJobcan: () => ipcRenderer.invoke("playwright:open-jobcan"),
   openSlackWF: () => ipcRenderer.invoke("playwright:open-slackwf"),
+
+  // === 設定管理API ===
+  config: {
+    getAll: () => ipcRenderer.invoke("config:get-all"),
+
+    // Jobcan設定
+    getJobcan: () => ipcRenderer.invoke("config:get-jobcan"),
+    setJobcanCredentials: (email: string, password: string) =>
+      ipcRenderer.invoke("config:set-jobcan-credentials", email, password),
+    setJobcanUrl: (url: string) =>
+      ipcRenderer.invoke("config:set-jobcan-url", url),
+    clearJobcan: () => ipcRenderer.invoke("config:clear-jobcan"),
+    testJobcan: () => ipcRenderer.invoke("config:test-jobcan"),
+
+    // 一般設定
+    setSetting: (key: string, value: boolean) =>
+      ipcRenderer.invoke("config:set-setting", key, value),
+
+    // デバッグ用
+    getDebugInfo: () => ipcRenderer.invoke("config:debug-info"),
+  },
 });

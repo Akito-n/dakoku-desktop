@@ -4,11 +4,17 @@ import {
   setJobcanConfig,
   setJobcanCredentials,
   clearJobcanCredentials,
-  isJobcanConfigured,
   getJobcanUrl,
   setJobcanUrl,
+  settingStore,
   type AppConfig,
 } from "../store/settings";
+
+// isConfigured判定のヘルパー関数
+const isJobcanConfigured = (): boolean => {
+  const config = getJobcanConfig();
+  return config.email.length > 0 && config.password.length > 0;
+};
 
 export const configHandlers = {
   // === 全体設定 ===
@@ -25,7 +31,7 @@ export const configHandlers = {
     return {
       ...config,
       url,
-      isConfigured: isJobcanConfigured(),
+      isConfigured: isJobcanConfigured(), // 動的に計算
     };
   },
 
@@ -42,8 +48,11 @@ export const configHandlers = {
     }
 
     const result = setJobcanCredentials(email, password);
-    console.log(`Jobcan設定完了: isConfigured=${result.isConfigured}`);
-    return result;
+    console.log(`Jobcan設定完了: isConfigured=${isJobcanConfigured()}`);
+    return {
+      ...result,
+      isConfigured: isJobcanConfigured(), // 動的に追加
+    };
   },
 
   "config:set-jobcan-url": async (url: string) => {
@@ -64,12 +73,14 @@ export const configHandlers = {
     console.log("Jobcan設定をクリア");
     const result = clearJobcanCredentials();
     console.log("Jobcan設定をクリアしました");
-    return result;
+    return {
+      ...result,
+      isConfigured: false, // クリア後は必ずfalse
+    };
   },
 
   "config:test-jobcan": async () => {
     console.log("Jobcan設定のテスト");
-    const config = getJobcanConfig();
 
     if (!isJobcanConfigured()) {
       throw new Error("Jobcanの設定が完了していません");
@@ -92,10 +103,7 @@ export const configHandlers = {
     const currentSettings = getAllConfig().settings;
     const newSettings = { ...currentSettings, [key]: value };
 
-    // electron-storeに保存
-    const { configStore } = await import("../store/config");
-    configStore.set("settings", newSettings);
-
+    settingStore.set("settings", newSettings);
     return newSettings;
   },
 
@@ -104,7 +112,7 @@ export const configHandlers = {
     const config = getAllConfig();
     console.log("=== 設定デバッグ情報 ===");
     console.log("Jobcan設定状態:", isJobcanConfigured());
-    console.log("設定ファイル場所:", configStore.path);
+    console.log("設定ファイル場所:", settingStore.path);
     console.log("設定値:", {
       ...config,
       // パスワードをマスク
@@ -119,7 +127,7 @@ export const configHandlers = {
     });
 
     return {
-      configPath: configStore.path,
+      configPath: settingStore.path,
       isJobcanConfigured: isJobcanConfigured(),
       configSize: JSON.stringify(config).length,
     };

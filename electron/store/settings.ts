@@ -9,12 +9,10 @@ export interface AppConfig {
   jobcan: {
     email: string;
     password: string;
-    isConfigured: boolean;
   };
   slackwf: {
     email: string;
     password: string;
-    isConfigured: boolean;
   };
   // 将来の拡張用
   settings: {
@@ -32,12 +30,10 @@ const defaultConfig: AppConfig = {
   jobcan: {
     email: "",
     password: "",
-    isConfigured: false,
   },
   slackwf: {
     email: "",
     password: "",
-    isConfigured: false,
   },
   settings: {
     autoLogin: false,
@@ -91,7 +87,6 @@ export const setJobcanCredentials = (email: string, password: string) => {
   return setJobcanConfig({
     email,
     password,
-    isConfigured: email.length > 0 && password.length > 0,
   });
 };
 
@@ -99,13 +94,5 @@ export const clearJobcanCredentials = () => {
   return setJobcanConfig({
     email: "",
     password: "",
-    isConfigured: false,
   });
-};
-
-export const isJobcanConfigured = (): boolean => {
-  const config = getJobcanConfig();
-  return (
-    config.isConfigured && config.email.length > 0 && config.password.length > 0
-  );
 };
