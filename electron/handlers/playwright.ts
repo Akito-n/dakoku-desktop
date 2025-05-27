@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import path from "node:path";
-import { getJobcanUrl } from "../store/config";
+import { getJobcanUrl } from "../store/settings";
 
 export const playwrightHandlers = {
   "playwright:open-jobcan": async () => {
