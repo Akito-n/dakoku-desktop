@@ -1,7 +1,7 @@
+import type { IpcMainInvokeEvent } from "electron";
 import {
   getAllConfig,
   getJobcanConfig,
-  setJobcanConfig,
   setJobcanCredentials,
   clearJobcanCredentials,
   getJobcanUrl,
@@ -16,15 +16,15 @@ const isJobcanConfigured = (): boolean => {
   return config.email.length > 0 && config.password.length > 0;
 };
 
-export const configHandlers = {
+export const settingsHandlers = {
   // === 全体設定 ===
-  "config:get-all": async (): Promise<AppConfig> => {
+  "config:get-all": async (_event: IpcMainInvokeEvent): Promise<AppConfig> => {
     console.log("設定全体を取得");
     return getAllConfig();
   },
 
   // === Jobcan設定 ===
-  "config:get-jobcan": async () => {
+  "config:get-jobcan": async (_event: IpcMainInvokeEvent) => {
     console.log("Jobcan設定を取得");
     const config = getJobcanConfig();
     const url = getJobcanUrl();
@@ -35,7 +35,11 @@ export const configHandlers = {
     };
   },
 
-  "config:set-jobcan-credentials": async (email: string, password: string) => {
+  "config:set-jobcan-credentials": async (
+    _event: IpcMainInvokeEvent,
+    email: string,
+    password: string,
+  ) => {
     console.log(`Jobcan認証情報を設定: email=${email ? "***" : "(空)"}`);
 
     // 基本的なバリデーション
@@ -55,7 +59,7 @@ export const configHandlers = {
     };
   },
 
-  "config:set-jobcan-url": async (url: string) => {
+  "config:set-jobcan-url": async (_event: IpcMainInvokeEvent, url: string) => {
     console.log(`JobcanのURLを設定: ${url}`);
 
     // URLバリデーション
@@ -69,7 +73,7 @@ export const configHandlers = {
     return { url };
   },
 
-  "config:clear-jobcan": async () => {
+  "config:clear-jobcan": async (_event: IpcMainInvokeEvent) => {
     console.log("Jobcan設定をクリア");
     const result = clearJobcanCredentials();
     console.log("Jobcan設定をクリアしました");
@@ -79,7 +83,7 @@ export const configHandlers = {
     };
   },
 
-  "config:test-jobcan": async () => {
+  "config:test-jobcan": async (_event: IpcMainInvokeEvent) => {
     console.log("Jobcan設定のテスト");
 
     if (!isJobcanConfigured()) {
@@ -96,6 +100,7 @@ export const configHandlers = {
 
   // === 一般設定 ===
   "config:set-setting": async (
+    _event: IpcMainInvokeEvent,
     key: keyof AppConfig["settings"],
     value: boolean,
   ) => {
@@ -108,7 +113,7 @@ export const configHandlers = {
   },
 
   // === デバッグ用 ===
-  "config:debug-info": async () => {
+  "config:debug-info": async (_event: IpcMainInvokeEvent) => {
     const config = getAllConfig();
     console.log("=== 設定デバッグ情報 ===");
     console.log("Jobcan設定状態:", isJobcanConfigured());
