@@ -1,6 +1,11 @@
 import { spawn } from "node:child_process";
 import path from "node:path";
-import { getJobcanUrl, getJobcanConfig } from "../store/settings";
+import {
+  getJobcanUrl,
+  getJobcanConfig,
+  getAttendanceConfig,
+  formatTimeForJobcan,
+} from "../store/settings";
 
 export const playwrightHandlers = {
   "playwright:open-jobcan": async () => {
@@ -8,6 +13,9 @@ export const playwrightHandlers = {
 
     // electron-storeから設定を取得
     const jobcanUrl = getJobcanUrl();
+    const attendanceConfig = getAttendanceConfig();
+    const startTime = Date.now();
+
     const jobcanConfig = getJobcanConfig();
 
     console.log("🔧 設定情報:");
@@ -28,8 +36,6 @@ export const playwrightHandlers = {
       throw new Error(errorMessage);
     }
 
-    const startTime = Date.now();
-
     return new Promise((resolve, reject) => {
       const scriptPath = path.join(
         process.cwd(),
@@ -45,6 +51,8 @@ export const playwrightHandlers = {
           JOBCAN_URL: jobcanUrl,
           JOBCAN_EMAIL: jobcanConfig.email,
           JOBCAN_PASSWORD: jobcanConfig.password,
+          JOBCAN_START_TIME: formatTimeForJobcan(attendanceConfig.startTime), // "0900"
+          JOBCAN_END_TIME: formatTimeForJobcan(attendanceConfig.endTime),
           EXIT_METHOD: "graceful", // immediate, graceful, natural を切り替え可能
         },
       });
@@ -112,20 +120,20 @@ export const playwrightHandlers = {
         }
       }, 5000);
 
-      // タイムアウト設定（デバッグ用）
-      setTimeout(() => {
-        if (child.exitCode === null) {
-          console.log("⏰ タイムアウト: 60秒経過、強制終了します");
-          child.kill("SIGTERM");
-          clearInterval(monitorInterval);
-          setTimeout(() => {
-            if (child.exitCode === null) {
-              console.log("🔥 SIGKILL で強制終了");
-              child.kill("SIGKILL");
-            }
-          }, 5000);
-        }
-      }, 60000);
+      // // タイムアウト設定（デバッグ用）
+      // setTimeout(() => {
+      //   if (child.exitCode === null) {
+      //     console.log("⏰ タイムアウト: 60秒経過、強制終了します");
+      //     child.kill("SIGTERM");
+      //     clearInterval(monitorInterval);
+      //     setTimeout(() => {
+      //       if (child.exitCode === null) {
+      //         console.log("🔥 SIGKILL で強制終了");
+      //         child.kill("SIGKILL");
+      //       }
+      //     }, 5000);
+      //   }
+      // }, 60000);
     });
   },
 
