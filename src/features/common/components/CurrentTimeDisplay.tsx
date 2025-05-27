@@ -31,19 +31,22 @@ const CurrentTimeDisplay: React.FC<CurrentTimeDisplayProps> = ({
           padding: "10px 15px",
           fontSize: 14,
           iconSize: 14,
+          dateSize: 12,
         };
       case "large":
         return {
           padding: "25px 30px",
-          fontSize: 28,
+          fontSize: 32,
           iconSize: 28,
+          dateSize: 18,
         };
       // case "medium":
       default:
         return {
           padding: "15px 20px",
-          fontSize: 16,
-          iconSize: 16,
+          fontSize: 20,
+          iconSize: 18,
+          dateSize: 14,
         };
     }
   };
@@ -75,7 +78,7 @@ const CurrentTimeDisplay: React.FC<CurrentTimeDisplayProps> = ({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          gap: "8px",
+          gap: "10px",
         }}
       >
         {showIcon && (
@@ -85,14 +88,21 @@ const CurrentTimeDisplay: React.FC<CurrentTimeDisplayProps> = ({
             style={{ color: "#106ba3" }}
           />
         )}
-        <div>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+          }}
+        >
           {showDate && (
             <div
               style={{
-                fontSize: `${Math.floor(styles.fontSize * 0.85)}px`,
+                fontSize: `${styles.dateSize}px`,
                 color: "#5c7080",
-                marginBottom: "2px",
+                marginBottom: "4px",
                 fontWeight: 500,
+                lineHeight: 1.2,
               }}
             >
               {dateString}
@@ -104,6 +114,7 @@ const CurrentTimeDisplay: React.FC<CurrentTimeDisplayProps> = ({
               color: "#106ba3",
               fontWeight: 600,
               fontFamily: "monospace",
+              lineHeight: 1,
             }}
           >
             {displayTime}

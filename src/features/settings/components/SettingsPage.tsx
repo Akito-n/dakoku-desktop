@@ -195,23 +195,26 @@ const SettingsPage: React.FC = () => {
 
   return (
     <div style={{ maxWidth: "800px", margin: "0 auto", padding: "20px" }}>
-      {/* ヘッダー */}
       <div
         style={{
           textAlign: "center",
           marginBottom: "30px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
         }}
       >
-        <H1>
-          <Icon icon="cog" style={{ marginRight: "10px" }} />
+        <H1
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "10px",
+            margin: 0,
+          }}
+        >
+          <Icon icon="cog" size={24} />
           設定管理
         </H1>
       </div>
 
-      {/* メッセージ表示 */}
       {message && (
         <Callout
           intent={message.intent}
@@ -231,8 +234,15 @@ const SettingsPage: React.FC = () => {
             marginBottom: "20px",
           }}
         >
-          <H2 style={{ margin: 0 }}>
-            <Icon icon="time" style={{ marginRight: "8px" }} />
+          <H2
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              margin: 0,
+            }}
+          >
+            <Icon icon="time" size={20} />
             勤務時間設定
           </H2>
         </div>
@@ -296,6 +306,7 @@ const SettingsPage: React.FC = () => {
 
       {/* Jobcan設定カード */}
       <Card elevation={2}>
+        {/* Jobcan設定ヘッダー - 修正版 */}
         <div
           style={{
             display: "flex",
@@ -304,17 +315,22 @@ const SettingsPage: React.FC = () => {
             marginBottom: "20px",
           }}
         >
-          <H2 style={{ margin: 0 }}>
-            <Icon icon="office" style={{ marginRight: "8px" }} />
+          <H2
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              margin: 0,
+            }}
+          >
+            <Icon icon="office" size={20} />
             Jobcan 設定
           </H2>
           <Tag
             intent={jobcanConfig.isConfigured ? Intent.SUCCESS : Intent.NONE}
             icon={jobcanConfig.isConfigured ? "tick" : "cross"}
             large
-          >
-            {jobcanConfig.isConfigured ? "設定済み" : "未設定"}
-          </Tag>
+          />
         </div>
 
         {/* URL設定 */}
@@ -429,10 +445,17 @@ const SettingsPage: React.FC = () => {
         </form>
       </Card>
 
-      {/* 将来の拡張用プレースホルダー */}
       <Card elevation={1} style={{ marginTop: "20px", opacity: 0.6 }}>
-        <H2>
-          <Icon icon="chat" style={{ marginRight: "8px" }} />
+        <H2
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            margin: 0,
+            marginBottom: "12px",
+          }}
+        >
+          <Icon icon="chat" size={20} />
           SlackWF 設定
         </H2>
         <Callout intent={Intent.NONE} icon="info-sign">

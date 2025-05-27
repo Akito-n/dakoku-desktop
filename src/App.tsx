@@ -104,7 +104,7 @@ function App() {
 
   return (
     <div style={{ minHeight: "100vh" }}>
-      {/* ナビゲーションバー */}
+      {/* ナビゲーションバー - 修正版 */}
       <Navbar
         style={{
           backgroundColor: "#ffffff",
@@ -113,8 +113,14 @@ function App() {
         }}
       >
         <NavbarGroup align={Alignment.LEFT}>
-          <NavbarHeading>
-            <Icon icon="time" style={{ marginRight: "8px" }} />
+          <NavbarHeading
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+            }}
+          >
+            <Icon icon="time" size={18} />
             Dakoku Desktop
           </NavbarHeading>
         </NavbarGroup>
@@ -136,7 +142,6 @@ function App() {
         </NavbarGroup>
       </Navbar>
 
-      {/* メインコンテンツ */}
       <main style={{ paddingTop: "20px", paddingBottom: "20px" }}>
         {renderPageContent()}
       </main>
