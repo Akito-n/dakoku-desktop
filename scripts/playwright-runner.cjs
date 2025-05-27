@@ -3,6 +3,8 @@ const { chromium } = require("playwright");
 const fs = require("fs");
 const path = require("path");
 
+const { performStartTimePunch, performEndTimePunch } = require("./jobcan.cjs");
+
 // プロセス管理用のPIDファイル
 const PID_FILE = path.join(process.cwd(), "temp", "playwright.pid");
 
@@ -239,7 +241,26 @@ async function openJobcan() {
 
           if (timeCorrectionSuccess) {
             console.log("🎉 打刻修正画面への遷移完了！");
-            console.log("📝 ここで打刻修正を行ってください");
+            const startTime = process.env.JOBCAN_START_TIME || "0900"; // "0900"
+            const endTime = process.env.JOBCAN_END_TIME || "1800"; // "1800"
+
+            try {
+              // 出勤打刻の実行
+              console.log("🔄 出勤打刻を実行します...");
+              await performStartTimePunch(attendancePage, startTime);
+
+              // 出勤と退勤の間に少し待機
+              await attendancePage.waitForTimeout(2000);
+
+              // 退勤打刻の実行
+              console.log("🔄 退勤打刻を実行します...");
+              await performEndTimePunch(attendancePage, endTime);
+
+              console.log("🎉 すべての打刻処理が完了しました！");
+            } catch (punchError) {
+              console.error("❌ 打刻処理でエラーが発生:", punchError.message);
+              console.log("手動で打刻を行ってください");
+            }
           } else {
             console.log("⚠️ 打刻修正画面への自動遷移に失敗しました");
             console.log("手動で打刻修正リンクをクリックしてください");
@@ -472,6 +493,8 @@ async function navigateToTimeCorrection(currentPage) {
 
     // 直接打刻修正のURLに遷移
     const timeCorrectionUrl = "https://ssl.jobcan.jp/employee/adit/modify/";
+    // const timeCorrectionUrl =
+    //   "https://ssl.jobcan.jp/employee/adit/modify/?year=2025&month=5&day=26";
 
     console.log(`🔄 打刻修正画面に遷移中: ${timeCorrectionUrl}`);
     await currentPage.goto(timeCorrectionUrl);
