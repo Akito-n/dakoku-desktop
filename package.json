@@ -12,6 +12,8 @@
     "format": "biome format --write src/"
   },
   "dependencies": {
+    "chromium-bidi": "^5.3.1",
+    "playwright": "^1.52.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
