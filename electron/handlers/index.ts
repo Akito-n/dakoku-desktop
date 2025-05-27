@@ -1,6 +1,6 @@
 import { ipcMain } from "electron";
 import { playwrightHandlers } from "./playwright";
-import { configHandlers } from "./settings";
+import { settingsHandlers } from "./settings";
 
 export function registerHandlers() {
   // Playwright関連のハンドラー
@@ -9,7 +9,7 @@ export function registerHandlers() {
   }
 
   // 設定関連のハンドラー
-  for (const [channel, handler] of Object.entries(configHandlers)) {
+  for (const [channel, handler] of Object.entries(settingsHandlers)) {
     ipcMain.handle(channel, handler);
   }
 }
