@@ -14,6 +14,10 @@ export interface AppConfig {
     email: string;
     password: string;
   };
+  attendance: {
+    startTime: string; // "09:00" HH:MM形式
+    endTime: string; // "18:00" HH:MM形式
+  };
   // 将来の拡張用
   settings: {
     autoLogin: boolean;
@@ -34,6 +38,10 @@ const defaultConfig: AppConfig = {
   slackwf: {
     email: "",
     password: "",
+  },
+  attendance: {
+    startTime: "09:00",
+    endTime: "18:00",
   },
   settings: {
     autoLogin: false,
@@ -74,6 +82,31 @@ export const getAllConfig = (): AppConfig => {
 // Jobcan設定の取得・更新
 export const getJobcanConfig = () => {
   return settingStore.get("jobcan");
+};
+
+export const getAttendanceConfig = () => {
+  return settingStore.get("attendance");
+};
+
+export const setAttendanceConfig = (
+  config: Partial<AppConfig["attendance"]>,
+) => {
+  const currentConfig = getAttendanceConfig();
+  const newConfig = { ...currentConfig, ...config };
+  settingStore.set("attendance", newConfig);
+  return newConfig;
+};
+
+export const formatTimeForJobcan = (time: string): string => {
+  // "09:00" -> "0900"
+  return time.replace(":", "");
+};
+
+export const formatTimeForSlackWF = (time: string): string => {
+  // "09:00" -> "9:00", "9:00" -> "9:00", "10:00" -> "10:00"
+  const [hours, minutes] = time.split(":");
+  const formattedHours = Number.parseInt(hours, 10).toString();
+  return `${formattedHours}:${minutes}`;
 };
 
 export const setJobcanConfig = (config: Partial<AppConfig["jobcan"]>) => {

@@ -40,6 +40,9 @@ contextBridge.exposeInMainWorld("electronAPI", {
       ipcRenderer.invoke("config:set-jobcan-url", url),
     clearJobcan: () => ipcRenderer.invoke("config:clear-jobcan"),
     testJobcan: () => ipcRenderer.invoke("config:test-jobcan"),
+    getAttendance: () => ipcRenderer.invoke("config:get-attendance"),
+    setAttendance: (startTime: string, endTime: string) =>
+      ipcRenderer.invoke("config:set-attendance", startTime, endTime),
 
     // 一般設定
     setSetting: (key: string, value: boolean) =>

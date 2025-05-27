@@ -1,12 +1,40 @@
 import { spawn } from "node:child_process";
 import path from "node:path";
-import { getJobcanUrl } from "../store/settings";
+import {
+  getJobcanUrl,
+  getJobcanConfig,
+  getAttendanceConfig,
+  formatTimeForJobcan,
+} from "../store/settings";
 
 export const playwrightHandlers = {
   "playwright:open-jobcan": async () => {
     console.log("=== 詳細デバッグモード開始 ===");
+
+    // electron-storeから設定を取得
     const jobcanUrl = getJobcanUrl();
+    const attendanceConfig = getAttendanceConfig();
     const startTime = Date.now();
+
+    const jobcanConfig = getJobcanConfig();
+
+    console.log("🔧 設定情報:");
+    console.log(`  - URL: ${jobcanUrl}`);
+    console.log(`  - Email: ${jobcanConfig.email ? "設定済み" : "未設定"}`);
+    console.log(
+      `  - Password: ${jobcanConfig.password ? "設定済み" : "未設定"}`,
+    );
+
+    // 認証情報のバリデーション
+    if (!jobcanConfig.email || !jobcanConfig.password) {
+      const missingFields = [];
+      if (!jobcanConfig.email) missingFields.push("メールアドレス");
+      if (!jobcanConfig.password) missingFields.push("パスワード");
+
+      const errorMessage = `認証情報が不足しています: ${missingFields.join(", ")}`;
+      console.error("❌", errorMessage);
+      throw new Error(errorMessage);
+    }
 
     return new Promise((resolve, reject) => {
       const scriptPath = path.join(
@@ -15,17 +43,22 @@ export const playwrightHandlers = {
         "playwright-runner.cjs",
       );
 
-      // 環境変数で終了方法を制御
+      // 環境変数で認証情報を子プロセスに渡す
       const child = spawn("node", [scriptPath, "jobcan"], {
         stdio: "inherit",
         env: {
           ...process.env,
           JOBCAN_URL: jobcanUrl,
+          JOBCAN_EMAIL: jobcanConfig.email,
+          JOBCAN_PASSWORD: jobcanConfig.password,
+          JOBCAN_START_TIME: formatTimeForJobcan(attendanceConfig.startTime), // "0900"
+          JOBCAN_END_TIME: formatTimeForJobcan(attendanceConfig.endTime),
           EXIT_METHOD: "graceful", // immediate, graceful, natural を切り替え可能
         },
       });
 
       console.log(`🚀 子プロセス起動: PID ${child.pid}`);
+      console.log(`🔐 認証情報を環境変数で渡しました`);
 
       // すべてのイベントに詳細ログを追加
       child.on("spawn", () => {
@@ -87,20 +120,26 @@ export const playwrightHandlers = {
         }
       }, 5000);
 
-      // タイムアウト設定（デバッグ用）
-      setTimeout(() => {
-        if (child.exitCode === null) {
-          console.log("⏰ タイムアウト: 60秒経過、強制終了します");
-          child.kill("SIGTERM");
-          clearInterval(monitorInterval);
-          setTimeout(() => {
-            if (child.exitCode === null) {
-              console.log("🔥 SIGKILL で強制終了");
-              child.kill("SIGKILL");
-            }
-          }, 5000);
-        }
-      }, 60000);
+      // // タイムアウト設定（デバッグ用）
+      // setTimeout(() => {
+      //   if (child.exitCode === null) {
+      //     console.log("⏰ タイムアウト: 60秒経過、強制終了します");
+      //     child.kill("SIGTERM");
+      //     clearInterval(monitorInterval);
+      //     setTimeout(() => {
+      //       if (child.exitCode === null) {
+      //         console.log("🔥 SIGKILL で強制終了");
+      //         child.kill("SIGKILL");
+      //       }
+      //     }, 5000);
+      //   }
+      // }, 60000);
     });
+  },
+
+  "playwright:open-slackwf": async () => {
+    // SlackWF版も同様に実装（将来対応）
+    console.log("SlackWF機能は未実装です");
+    throw new Error("SlackWF機能は未実装です");
   },
 };

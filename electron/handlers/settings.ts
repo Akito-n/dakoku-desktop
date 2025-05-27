@@ -8,6 +8,8 @@ import {
   setJobcanUrl,
   settingStore,
   type AppConfig,
+  getAttendanceConfig,
+  setAttendanceConfig,
 } from "../store/settings";
 
 // isConfigured判定のヘルパー関数
@@ -110,6 +112,45 @@ export const settingsHandlers = {
 
     settingStore.set("settings", newSettings);
     return newSettings;
+  },
+
+  // === Attendance設定 ===
+  "config:get-attendance": async (_event: IpcMainInvokeEvent) => {
+    console.log("Attendance設定を取得");
+    return getAttendanceConfig();
+  },
+
+  "config:set-attendance": async (
+    _event: IpcMainInvokeEvent,
+    startTime: string,
+    endTime: string,
+  ) => {
+    console.log(`Attendance設定を保存: 出勤=${startTime}, 退勤=${endTime}`);
+
+    // 基本的なバリデーション
+    const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+
+    if (!timeRegex.test(startTime)) {
+      throw new Error("出勤時刻の形式が正しくありません (HH:MM)");
+    }
+
+    if (!timeRegex.test(endTime)) {
+      throw new Error("退勤時刻の形式が正しくありません (HH:MM)");
+    }
+
+    // 出勤時刻が退勤時刻より後でないかチェック
+    const [startHour, startMin] = startTime.split(":").map(Number);
+    const [endHour, endMin] = endTime.split(":").map(Number);
+    const startMinutes = startHour * 60 + startMin;
+    const endMinutes = endHour * 60 + endMin;
+
+    if (startMinutes >= endMinutes) {
+      throw new Error("出勤時刻は退勤時刻より前である必要があります");
+    }
+
+    const result = setAttendanceConfig({ startTime, endTime });
+    console.log("Attendance設定完了");
+    return result;
   },
 
   // === デバッグ用 ===
