@@ -33,6 +33,18 @@ export interface ElectronAPI {
       isConfigured: boolean;
     }>;
     testJobcan: () => Promise<{ success: boolean; message: string }>;
+    getAttendance: () => Promise<{
+      startTime: string;
+      endTime: string;
+    }>;
+    setAttendance: (
+      startTime: string,
+      endTime: string,
+    ) => Promise<{
+      startTime: string;
+      endTime: string;
+    }>;
+
     setSetting: (
       key: "autoLogin" | "rememberCredentials",
       value: boolean,

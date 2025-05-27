@@ -1,5 +1,5 @@
 import type React from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Card,
   FormGroup,
@@ -31,6 +31,10 @@ const SettingsPage: React.FC = () => {
     url: "",
     isConfigured: false,
   });
+  const [attendanceConfig, setAttendanceConfig] = useState({
+    startTime: "09:00",
+    endTime: "18:00",
+  });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{
     intent: Intent;
@@ -38,15 +42,15 @@ const SettingsPage: React.FC = () => {
     icon: IconName;
   } | null>(null);
 
-  // 設定読み込み
-  useEffect(() => {
-    loadJobcanConfig();
-  }, []);
-
-  const loadJobcanConfig = async () => {
+  const loadAllSettings = useCallback(async () => {
     try {
-      const config = await window.electronAPI.config.getJobcan();
-      setJobcanConfig(config);
+      // Jobcan設定読み込み
+      const jobcanConfig = await window.electronAPI.config.getJobcan();
+      setJobcanConfig(jobcanConfig);
+
+      // Attendance設定読み込み
+      const attendanceConfig = await window.electronAPI.config.getAttendance();
+      setAttendanceConfig(attendanceConfig);
     } catch (error) {
       console.error("設定の読み込みに失敗:", error);
       setMessage({
@@ -55,7 +59,11 @@ const SettingsPage: React.FC = () => {
         icon: "error",
       });
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadAllSettings();
+  }, [loadAllSettings]);
 
   const handleSaveCredentials = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -156,17 +164,51 @@ const SettingsPage: React.FC = () => {
     }
   };
 
+  const handleSaveAttendance = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage(null);
+
+    try {
+      const result = await window.electronAPI.config.setAttendance(
+        attendanceConfig.startTime,
+        attendanceConfig.endTime,
+      );
+
+      setAttendanceConfig(result);
+      setMessage({
+        intent: Intent.SUCCESS,
+        text: "勤務時間を保存しました",
+        icon: "tick",
+      });
+    } catch (error) {
+      console.error("勤務時間保存エラー:", error);
+      setMessage({
+        intent: Intent.DANGER,
+        text: error instanceof Error ? error.message : "保存に失敗しました",
+        icon: "error",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div style={{ maxWidth: "800px", margin: "0 auto", padding: "20px" }}>
       {/* ヘッダー */}
-      <div style={{ textAlign: "center", marginBottom: "30px" }}>
+      <div
+        style={{
+          textAlign: "center",
+          marginBottom: "30px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
         <H1>
           <Icon icon="cog" style={{ marginRight: "10px" }} />
           設定管理
         </H1>
-        <p style={{ color: "#5c7080", fontSize: "16px" }}>
-          Dakoku Desktop の各種設定を管理します
-        </p>
       </div>
 
       {/* メッセージ表示 */}
@@ -179,6 +221,78 @@ const SettingsPage: React.FC = () => {
           {message.text}
         </Callout>
       )}
+
+      <Card elevation={2} style={{ marginTop: "20px", marginBottom: "20px" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "20px",
+          }}
+        >
+          <H2 style={{ margin: 0 }}>
+            <Icon icon="time" style={{ marginRight: "8px" }} />
+            勤務時間設定
+          </H2>
+        </div>
+
+        <form onSubmit={handleSaveAttendance}>
+          <div style={{ display: "flex", gap: "20px", alignItems: "end" }}>
+            <FormGroup
+              label="出勤時刻"
+              labelFor="start-time-input"
+              helperText="HH:MM形式で入力"
+              style={{ flex: 1 }}
+            >
+              <InputGroup
+                id="start-time-input"
+                type="time"
+                value={attendanceConfig.startTime}
+                onChange={(e) =>
+                  setAttendanceConfig((prev) => ({
+                    ...prev,
+                    startTime: e.target.value,
+                  }))
+                }
+                leftIcon="log-in"
+                required
+              />
+            </FormGroup>
+
+            <FormGroup
+              label="退勤時刻"
+              labelFor="end-time-input"
+              helperText="HH:MM形式で入力"
+              style={{ flex: 1 }}
+            >
+              <InputGroup
+                id="end-time-input"
+                type="time"
+                value={attendanceConfig.endTime}
+                onChange={(e) =>
+                  setAttendanceConfig((prev) => ({
+                    ...prev,
+                    endTime: e.target.value,
+                  }))
+                }
+                leftIcon="log-out"
+                required
+              />
+            </FormGroup>
+
+            <Button
+              type="submit"
+              intent={Intent.PRIMARY}
+              disabled={loading}
+              icon={loading ? <Spinner size={16} /> : "floppy-disk"}
+              large
+            >
+              {loading ? "保存中..." : "保存"}
+            </Button>
+          </div>
+        </form>
+      </Card>
 
       {/* Jobcan設定カード */}
       <Card elevation={2}>
