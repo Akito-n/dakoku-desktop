@@ -12,6 +12,8 @@
     "format": "biome format --write src/"
   },
   "dependencies": {
+    "@blueprintjs/core": "^5.19.0",
+    "@blueprintjs/icons": "^5.22.0",
     "chromium-bidi": "^5.3.1",
     "electron-store": "^10.0.1",
     "playwright": "^1.52.0",
