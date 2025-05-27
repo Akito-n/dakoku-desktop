@@ -71,10 +71,26 @@ async function openJobcan() {
   // 現在のプロセスを記録
   recordCurrentPid();
 
+  // 環境変数から設定を取得
   const jobcanUrl =
     process.env.JOBCAN_URL || "https://id.jobcan.jp/users/sign_in";
+  const jobcanEmail = process.env.JOBCAN_EMAIL;
+  const jobcanPassword = process.env.JOBCAN_PASSWORD;
 
-  console.log(`Opening Jobcan at: ${jobcanUrl}`);
+  console.log("🔧 Playwright設定確認:");
+  console.log(`- URL: ${jobcanUrl}`);
+  console.log(`- Email: ${jobcanEmail ? "設定済み" : "未設定"}`);
+  console.log(`- Password: ${jobcanPassword ? "設定済み" : "未設定"}`);
+
+  // 認証情報の確認
+  if (!jobcanEmail || !jobcanPassword) {
+    const error = "認証情報が環境変数から取得できませんでした";
+    console.error("❌", error);
+    cleanup();
+    process.exit(1);
+  }
+
+  console.log(`🚀 Jobcan起動中: ${jobcanUrl}`);
 
   const browser = await chromium.launch({
     headless: false,
@@ -83,230 +99,404 @@ async function openJobcan() {
   const page = await browser.newPage();
 
   try {
+    // Jobcanページに移動
+    console.log("📖 Jobcanページを開いています...");
     await page.goto(jobcanUrl);
-    console.log("Successfully navigated to Jobcan");
+    console.log("✅ ページの読み込み完了");
 
-    // ★ 複数の終了検知方法を併用
-    let isClosing = false;
+    // ログインフォームの要素を待機
+    console.log("🔍 ログインフォームを探しています...");
 
-    // 方法1: browser disconnected
-    browser.on("disconnected", async () => {
-      if (!isClosing) {
-        isClosing = true;
-        console.log("🔴 ブラウザが切断されました (disconnected)");
-        cleanup();
-        process.exit(0);
+    try {
+      // メールアドレス入力フィールドを探す（複数のセレクタを試行）
+      const emailSelectors = [
+        'input[name="user[email]"]',
+        'input[type="email"]',
+        'input[name="email"]',
+        'input[placeholder*="メール"]',
+        'input[placeholder*="mail"]',
+        "#email",
+        "#user_email",
+      ];
+
+      let emailField = null;
+      for (const selector of emailSelectors) {
+        try {
+          emailField = await page.waitForSelector(selector, { timeout: 3000 });
+          console.log(`✅ メールフィールド発見: ${selector}`);
+          break;
+        } catch (e) {
+          console.log(`❌ セレクタ失敗: ${selector}`);
+        }
       }
-    });
 
-    // 方法2: page close
-    page.on("close", async () => {
-      if (!isClosing) {
-        isClosing = true;
-        console.log("🔴 ページが閉じられました (page close)");
-        await browser.close();
-        cleanup();
-        process.exit(0);
+      if (!emailField) {
+        throw new Error("メールアドレス入力フィールドが見つかりません");
       }
-    });
 
-    // 方法3: プロセス終了シグナル
-    process.on("SIGINT", async () => {
-      if (!isClosing) {
-        isClosing = true;
-        console.log("🛑 強制終了シグナル受信 (SIGINT)");
-        await browser.close();
-        cleanup();
-        process.exit(0);
+      // パスワード入力フィールドを探す
+      const passwordSelectors = [
+        'input[type="password"]',
+        'input[name="password"]',
+        'input[name="user[password]"]',
+        "#password",
+        "#user_password",
+      ];
+
+      let passwordField = null;
+      for (const selector of passwordSelectors) {
+        try {
+          passwordField = await page.waitForSelector(selector, {
+            timeout: 3000,
+          });
+          console.log(`✅ パスワードフィールド発見: ${selector}`);
+          break;
+        } catch (e) {
+          console.log(`❌ セレクタ失敗: ${selector}`);
+        }
       }
-    });
 
-    process.on("SIGTERM", async () => {
-      if (!isClosing) {
-        isClosing = true;
-        console.log("🛑 終了シグナル受信 (SIGTERM)");
-        await browser.close();
-        cleanup();
-        process.exit(0);
+      if (!passwordField) {
+        throw new Error("パスワード入力フィールドが見つかりません");
       }
-    });
 
-    // 方法4: 定期的なブラウザ状態チェック
-    const checkInterval = setInterval(async () => {
-      try {
-        // ブラウザの接続状態を確認
-        if (!browser.isConnected()) {
-          if (!isClosing) {
-            isClosing = true;
-            console.log("🔴 ブラウザ接続が失われました (polling check)");
-            clearInterval(checkInterval);
-            cleanup();
-            process.exit(0);
+      // ログイン情報を入力
+      console.log("📝 認証情報を入力中...");
+      await emailField.fill(jobcanEmail);
+      await passwordField.fill(jobcanPassword);
+      console.log("✅ 認証情報の入力完了");
+
+      // ログインボタンを探して実行
+      const loginSelectors = [
+        'button[type="submit"]',
+        'input[type="submit"]',
+        'button:has-text("ログイン")',
+        'button:has-text("サインイン")',
+        'input[value*="ログイン"]',
+        'input[value*="サインイン"]',
+        ".login-button",
+        "#login-button",
+      ];
+
+      let loginButton = null;
+      for (const selector of loginSelectors) {
+        try {
+          loginButton = await page.waitForSelector(selector, { timeout: 3000 });
+          console.log(`✅ ログインボタン発見: ${selector}`);
+          break;
+        } catch (e) {
+          console.log(`❌ セレクタ失敗: ${selector}`);
+        }
+      }
+
+      if (loginButton) {
+        console.log("🔐 ログインを実行中...");
+        await loginButton.click();
+
+        // ログイン後のページ遷移を待機
+        try {
+          await page.waitForLoadState("networkidle", { timeout: 10000 });
+          console.log("✅ ログイン処理完了！");
+        } catch (e) {
+          console.log("⚠️ ページ遷移の完了を待機中...");
+        }
+      } else {
+        console.log(
+          "⚠️ ログインボタンが見つからないため、手動でログインしてください",
+        );
+      }
+    } catch (loginError) {
+      console.log("⚠️ 自動ログインに失敗しました:", loginError.message);
+      console.log("手動でログインしてください");
+    }
+
+    // ★ ここから勤怠リンクをクリックして遷移を試行
+    try {
+      console.log("🔄 勤怠管理画面への遷移を開始...");
+      const attendancePage = await navigateToAttendance(page);
+
+      if (attendancePage) {
+        console.log("✅ 勤怠管理画面への遷移成功！");
+
+        // ★ 元のタブはそのまま残す（ブラウザが閉じられるのを防ぐ）
+        console.log("ℹ️ 元のタブは残したまま、新しいタブで作業を続けます");
+
+        // ★ 勤怠画面遷移成功後、打刻修正画面に遷移（新しいページオブジェクトを使用）
+        console.log("🔄 打刻修正画面への遷移を開始...");
+
+        // ページが有効かチェック
+        if (attendancePage.isClosed()) {
+          console.log("❌ 勤怠管理画面のページが既に閉じられています");
+          throw new Error("勤怠管理画面のページが無効です");
+        }
+
+        // 少し待ってからさらに遷移（ページの読み込み完了を待つ）
+        await attendancePage.waitForTimeout(3000);
+
+        try {
+          const timeCorrectionSuccess =
+            await navigateToTimeCorrection(attendancePage);
+
+          if (timeCorrectionSuccess) {
+            console.log("🎉 打刻修正画面への遷移完了！");
+            console.log("📝 ここで打刻修正を行ってください");
+          } else {
+            console.log("⚠️ 打刻修正画面への自動遷移に失敗しました");
+            console.log("手動で打刻修正リンクをクリックしてください");
           }
+        } catch (timeCorrectionError) {
+          console.log(
+            "❌ 打刻修正画面への遷移でエラー:",
+            timeCorrectionError.message,
+          );
+          console.log("手動で打刻修正リンクをクリックしてください");
         }
 
-        // ページの状態も確認
-        if (page.isClosed()) {
-          if (!isClosing) {
-            isClosing = true;
-            console.log("🔴 ページが閉じられました (polling check)");
-            clearInterval(checkInterval);
-            await browser.close();
-            cleanup();
-            process.exit(0);
-          }
-        }
-      } catch (error) {
-        // エラーが発生した場合もブラウザが閉じられたと判断
-        if (!isClosing) {
-          isClosing = true;
-          console.log("🔴 ブラウザ状態チェックでエラー:", error.message);
-          clearInterval(checkInterval);
-          cleanup();
-          process.exit(0);
-        }
+        // ★ 新しいページオブジェクトに対してイベントリスナーを設定
+        setupPageEventListeners(browser, attendancePage);
+      } else {
+        console.log("⚠️ 勤怠管理画面への遷移に失敗しました");
+        console.log("手動で勤怠リンクをクリックしてください");
+
+        // 元のページでイベントリスナーを設定
+        setupPageEventListeners(browser, page);
       }
-    }, 2000); // 2秒ごとにチェック
+    } catch (attendanceError) {
+      console.log("❌ 勤怠画面への遷移でエラー:", attendanceError.message);
+      console.log("手動で勤怠リンクをクリックしてください");
 
-    // 方法5: タイムアウト（30分で自動終了）
-    const timeout = setTimeout(
-      async () => {
-        if (!isClosing) {
-          isClosing = true;
-          console.log("⏰ タイムアウト（30分）によりブラウザを閉じます");
-          clearInterval(checkInterval);
-          await browser.close();
-          cleanup();
-          process.exit(0);
-        }
-      },
-      30 * 60 * 1000,
-    ); // 30分
-
-    console.log("ブラウザが開きました。");
-    console.log("- ブラウザを閉じると自動的にプロセスも終了します");
-    console.log("- 30分後に自動終了します");
-    console.log("- Ctrl+C で手動終了も可能です");
+      // 元のページでイベントリスナーを設定
+      setupPageEventListeners(browser, page);
+    }
 
     // メインループ（待機）
     await new Promise(() => {}); // 永遠に待つ
   } catch (error) {
-    console.error("Failed to navigate to Jobcan:", error);
+    console.error("❌ Jobcan処理でエラーが発生:", error.message);
     await browser.close();
     cleanup();
     throw error;
   }
 }
 
-async function openSlackWF() {
-  // 同様の処理をSlackWF用にも実装
-  cleanupExistingProcess();
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-  recordCurrentPid();
+// イベントリスナーの設定を関数として分離
+function setupPageEventListeners(browser, activePage) {
+  let isClosing = false;
 
-  const slackwfUrl = process.env.SLACKWF_URL || "https://workflowplus.com/";
-
-  console.log(`Opening SlackWF at: ${slackwfUrl}`);
-
-  const browser = await chromium.launch({
-    headless: false,
-    slowMo: 100,
+  // 方法1: browser disconnected
+  browser.on("disconnected", async () => {
+    if (!isClosing) {
+      isClosing = true;
+      console.log("🔴 ブラウザが切断されました (disconnected)");
+      cleanup();
+      process.exit(0);
+    }
   });
-  const page = await browser.newPage();
 
-  try {
-    await page.goto(slackwfUrl);
-    console.log("Successfully navigated to SlackWF");
+  // 方法2: page close
+  activePage.on("close", async () => {
+    if (!isClosing) {
+      isClosing = true;
+      console.log("🔴 ページが閉じられました (page close)");
+      await browser.close();
+      cleanup();
+      process.exit(0);
+    }
+  });
 
-    let isClosing = false;
+  // 方法3: プロセス終了シグナル
+  process.on("SIGINT", async () => {
+    if (!isClosing) {
+      isClosing = true;
+      console.log("🛑 強制終了シグナル受信 (SIGINT)");
+      await browser.close();
+      cleanup();
+      process.exit(0);
+    }
+  });
 
-    browser.on("disconnected", async () => {
-      if (!isClosing) {
-        isClosing = true;
-        console.log("🔴 SlackWFブラウザが切断されました");
-        cleanup();
-        process.exit(0);
-      }
-    });
+  process.on("SIGTERM", async () => {
+    if (!isClosing) {
+      isClosing = true;
+      console.log("🛑 終了シグナル受信 (SIGTERM)");
+      await browser.close();
+      cleanup();
+      process.exit(0);
+    }
+  });
 
-    page.on("close", async () => {
-      if (!isClosing) {
-        isClosing = true;
-        console.log("🔴 SlackWFページが閉じられました");
-        await browser.close();
-        cleanup();
-        process.exit(0);
-      }
-    });
-
-    process.on("SIGINT", async () => {
-      if (!isClosing) {
-        isClosing = true;
-        console.log("🛑 強制終了シグナル受信");
-        await browser.close();
-        cleanup();
-        process.exit(0);
-      }
-    });
-
-    process.on("SIGTERM", async () => {
-      if (!isClosing) {
-        isClosing = true;
-        console.log("🛑 終了シグナル受信");
-        await browser.close();
-        cleanup();
-        process.exit(0);
-      }
-    });
-
-    const checkInterval = setInterval(async () => {
-      try {
-        if (!browser.isConnected() || page.isClosed()) {
-          if (!isClosing) {
-            isClosing = true;
-            console.log("🔴 SlackWFブラウザが閉じられました (polling)");
-            clearInterval(checkInterval);
-            await browser.close();
-            cleanup();
-            process.exit(0);
-          }
-        }
-      } catch (error) {
+  // 方法4: 定期的なブラウザ状態チェック
+  const checkInterval = setInterval(async () => {
+    try {
+      // ブラウザの接続状態を確認
+      if (!browser.isConnected()) {
         if (!isClosing) {
           isClosing = true;
-          console.log("🔴 SlackWFブラウザ状態チェックでエラー");
+          console.log("🔴 ブラウザ接続が失われました (polling check)");
           clearInterval(checkInterval);
           cleanup();
           process.exit(0);
         }
       }
-    }, 2000);
 
-    const timeout = setTimeout(
-      async () => {
+      // ページの状態も確認
+      if (activePage.isClosed()) {
         if (!isClosing) {
           isClosing = true;
-          console.log("⏰ タイムアウトによりSlackWFブラウザを閉じます");
+          console.log("🔴 ページが閉じられました (polling check)");
           clearInterval(checkInterval);
           await browser.close();
           cleanup();
           process.exit(0);
         }
-      },
-      30 * 60 * 1000,
-    );
+      }
+    } catch (error) {
+      // エラーが発生した場合もブラウザが閉じられたと判断
+      if (!isClosing) {
+        isClosing = true;
+        console.log("🔴 ブラウザ状態チェックでエラー:", error.message);
+        clearInterval(checkInterval);
+        cleanup();
+        process.exit(0);
+      }
+    }
+  }, 2000); // 2秒ごとにチェック
 
-    console.log("SlackWFブラウザが開きました。");
-    console.log("- ブラウザを閉じると自動的にプロセスも終了します");
-    console.log("- 30分後に自動終了します");
+  // 方法5: タイムアウト（30分で自動終了）
+  const timeout = setTimeout(
+    async () => {
+      if (!isClosing) {
+        isClosing = true;
+        console.log("⏰ タイムアウト（30分）によりブラウザを閉じます");
+        clearInterval(checkInterval);
+        await browser.close();
+        cleanup();
+        process.exit(0);
+      }
+    },
+    30 * 60 * 1000,
+  ); // 30分
 
-    await new Promise(() => {});
+  console.log("🎉 ブラウザが開きました。");
+  console.log("- ブラウザを閉じると自動的にプロセスも終了します");
+  console.log("- 30分後に自動終了します");
+  console.log("- Ctrl+C で手動終了も可能です");
+}
+
+// 勤怠管理画面に遷移する関数（Jobcan専用）
+async function navigateToAttendance(page) {
+  try {
+    console.log("🔍 勤怠リンクを探しています...");
+
+    // まず、少し待機してページが完全に読み込まれるのを待つ
+    await page.waitForTimeout(3000);
+
+    // JavaScriptで勤怠リンクを見つけて直接クリック
+    const clickResult = await page.evaluate(() => {
+      // 全てのaタグを取得
+      const links = Array.from(document.querySelectorAll("a"));
+
+      // visible: trueの勤怠リンクを探す
+      const targetLink = links.find((link) => {
+        const isJobcanAttendance =
+          link.href === "https://ssl.jobcan.jp/jbcoauth/login";
+        const rect = link.getBoundingClientRect();
+        const isVisible = rect.width > 0 && rect.height > 0;
+        return isJobcanAttendance && isVisible;
+      });
+
+      if (targetLink) {
+        console.log("Found visible attendance link:", targetLink.href);
+
+        // 直接クリック実行
+        targetLink.click();
+        return {
+          success: true,
+          href: targetLink.href,
+          text: targetLink.textContent.trim(),
+        };
+      }
+
+      return {
+        success: false,
+        error: "Visible attendance link not found",
+      };
+    });
+
+    if (!clickResult.success) {
+      throw new Error("表示されている勤怠リンクが見つかりません");
+    }
+
+    console.log(`✅ 勤怠リンクをクリックしました: ${clickResult.href}`);
+    console.log("⏳ ページ遷移を待機中...");
+
+    // クリック後の処理を待機
+    await page.waitForTimeout(2000);
+
+    // 新しいタブ/ウィンドウの処理（target="_blank"の場合）
+    const context = page.context();
+    const pages = context.pages();
+
+    if (pages.length > 1) {
+      console.log(`✅ 新しいタブが開かれました（総タブ数: ${pages.length}）`);
+      const newPage = pages[pages.length - 1];
+      await newPage.waitForLoadState("networkidle", { timeout: 15000 });
+      console.log("✅ 勤怠管理画面に遷移しました");
+
+      // 新しいページを返すように変更して、以降の操作で使用
+      return newPage;
+    } else {
+      // 同じタブでの遷移の場合
+      try {
+        await page.waitForLoadState("networkidle", { timeout: 15000 });
+        console.log("✅ 勤怠管理画面に遷移しました");
+      } catch (e) {
+        console.log("⚠️ ページ遷移の完了を待機中...");
+        // 遷移が完了しなくても成功とみなす
+      }
+      return page;
+    }
   } catch (error) {
-    console.error("Failed to navigate to SlackWF:", error);
-    await browser.close();
-    cleanup();
-    throw error;
+    console.error("❌ 勤怠画面への遷移に失敗:", error.message);
+    return false;
   }
+}
+
+// 打刻修正画面に遷移する関数（直接URLアクセス方式）
+async function navigateToTimeCorrection(currentPage) {
+  try {
+    console.log("🔍 打刻修正画面に直接遷移します...");
+
+    // ページが完全に読み込まれるのを待機
+    await currentPage.waitForTimeout(2000);
+
+    // 直接打刻修正のURLに遷移
+    const timeCorrectionUrl = "https://ssl.jobcan.jp/employee/adit/modify/";
+
+    console.log(`🔄 打刻修正画面に遷移中: ${timeCorrectionUrl}`);
+    await currentPage.goto(timeCorrectionUrl);
+
+    // ページ遷移を待機
+    try {
+      await currentPage.waitForLoadState("networkidle", { timeout: 15000 });
+      console.log("✅ 打刻修正画面に遷移しました");
+    } catch (e) {
+      console.log("⚠️ ページ遷移の完了を待機中...");
+      // 遷移が完了しなくても成功とみなす
+    }
+
+    return true;
+  } catch (error) {
+    console.error("❌ 打刻修正画面への遷移に失敗:", error.message);
+    return false;
+  }
+}
+
+async function openSlackWF() {
+  // 同様の処理をSlackWF用にも実装（将来対応）
+  console.log("SlackWF機能は未実装です");
+  cleanup();
+  process.exit(1);
 }
 
 // プロセス終了時のクリーンアップを確実に実行
