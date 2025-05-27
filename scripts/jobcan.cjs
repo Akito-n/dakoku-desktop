@@ -165,6 +165,118 @@ async function performEndTimePunch(page, endTime, notice = "打刻") {
     throw error;
   }
 }
+
+// 勤怠管理画面に遷移する関数（Jobcan専用）
+async function navigateToAttendance(page) {
+  try {
+    console.log("🔍 勤怠リンクを探しています...");
+
+    // まず、少し待機してページが完全に読み込まれるのを待つ
+    await page.waitForTimeout(3000);
+
+    // JavaScriptで勤怠リンクを見つけて直接クリック
+    const clickResult = await page.evaluate(() => {
+      // 全てのaタグを取得
+      const links = Array.from(document.querySelectorAll("a"));
+
+      // visible: trueの勤怠リンクを探す
+      const targetLink = links.find((link) => {
+        const isJobcanAttendance =
+          link.href === "https://ssl.jobcan.jp/jbcoauth/login";
+        const rect = link.getBoundingClientRect();
+        const isVisible = rect.width > 0 && rect.height > 0;
+        return isJobcanAttendance && isVisible;
+      });
+
+      if (targetLink) {
+        console.log("Found visible attendance link:", targetLink.href);
+
+        // 直接クリック実行
+        targetLink.click();
+        return {
+          success: true,
+          href: targetLink.href,
+          text: targetLink.textContent.trim(),
+        };
+      }
+
+      return {
+        success: false,
+        error: "Visible attendance link not found",
+      };
+    });
+
+    if (!clickResult.success) {
+      throw new Error("表示されている勤怠リンクが見つかりません");
+    }
+
+    console.log(`✅ 勤怠リンクをクリックしました: ${clickResult.href}`);
+    console.log("⏳ ページ遷移を待機中...");
+
+    // クリック後の処理を待機
+    await page.waitForTimeout(2000);
+
+    // 新しいタブ/ウィンドウの処理（target="_blank"の場合）
+    const context = page.context();
+    const pages = context.pages();
+
+    if (pages.length > 1) {
+      console.log(`✅ 新しいタブが開かれました（総タブ数: ${pages.length}）`);
+      const newPage = pages[pages.length - 1];
+      await newPage.waitForLoadState("networkidle", { timeout: 15000 });
+      console.log("✅ 勤怠管理画面に遷移しました");
+
+      // 新しいページを返すように変更して、以降の操作で使用
+      return newPage;
+    } else {
+      // 同じタブでの遷移の場合
+      try {
+        await page.waitForLoadState("networkidle", { timeout: 15000 });
+        console.log("✅ 勤怠管理画面に遷移しました");
+      } catch (e) {
+        console.log("⚠️ ページ遷移の完了を待機中...");
+        // 遷移が完了しなくても成功とみなす
+      }
+      return page;
+    }
+  } catch (error) {
+    console.error("❌ 勤怠画面への遷移に失敗:", error.message);
+    return false;
+  }
+}
+
+// 打刻修正画面に遷移する関数（直接URLアクセス方式）
+async function navigateToTimeCorrection(currentPage) {
+  try {
+    console.log("🔍 打刻修正画面に直接遷移します...");
+
+    // ページが完全に読み込まれるのを待機
+    await currentPage.waitForTimeout(2000);
+
+    // 直接打刻修正のURLに遷移
+    const timeCorrectionUrl = "https://ssl.jobcan.jp/employee/adit/modify/";
+    // const timeCorrectionUrl =
+    //   "https://ssl.jobcan.jp/employee/adit/modify/?year=2025&month=5&day=26";
+
+    console.log(`🔄 打刻修正画面に遷移中: ${timeCorrectionUrl}`);
+    await currentPage.goto(timeCorrectionUrl);
+
+    // ページ遷移を待機
+    try {
+      await currentPage.waitForLoadState("networkidle", { timeout: 15000 });
+      console.log("✅ 打刻修正画面に遷移しました");
+    } catch (e) {
+      console.log("⚠️ ページ遷移の完了を待機中...");
+      // 遷移が完了しなくても成功とみなす
+    }
+
+    return true;
+  } catch (error) {
+    console.error("❌ 打刻修正画面への遷移に失敗:", error.message);
+    return false;
+  }
+}
+
 module.exports = {
   performStartTimePunch,
   performEndTimePunch,
@@ -172,4 +284,6 @@ module.exports = {
   inputEndTime,
   inputNotice,
   clickPunchButton,
+  navigateToAttendance,
+  navigateToTimeCorrection,
 };
