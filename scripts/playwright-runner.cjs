@@ -25,7 +25,7 @@ if (!fs.existsSync(tempDir)) {
   fs.mkdirSync(tempDir, { recursive: true });
 }
 
-async function openJobcan() {
+async function openJobcan(mode = "both") {
   cleanupExistingProcess();
 
   await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -172,21 +172,21 @@ async function openJobcan() {
             const startTime = process.env.JOBCAN_START_TIME || "0900";
             const endTime = process.env.JOBCAN_END_TIME || "1800";
 
-            // TODO: 出勤と退勤をタイマーで起動するらなら何かフラグを送ってここで動作させる
-            try {
-              // 出勤打刻の実行
-              console.log("🔄 出勤打刻を実行します...");
-              await performStartTimePunch(attendancePage, startTime);
+            await executeJobcanAction(attendancePage, mode, startTime, endTime);
+            // try {
+            //   // 出勤打刻の実行
+            //   console.log("🔄 出勤打刻を実行します...");
+            //   await performStartTimePunch(attendancePage, startTime);
 
-              // 出勤と退勤の間に少し待機
-              await attendancePage.waitForTimeout(2000);
+            //   // 出勤と退勤の間に少し待機
+            //   await attendancePage.waitForTimeout(2000);
 
-              // 退勤打刻の実行
-              console.log("🔄 退勤打刻を実行します...");
-              await performEndTimePunch(attendancePage, endTime);
-            } catch (punchError) {
-              console.error("❌ 打刻処理でエラーが発生:", punchError.message);
-            }
+            //   // 退勤打刻の実行
+            //   console.log("🔄 退勤打刻を実行します...");
+            //   await performEndTimePunch(attendancePage, endTime);
+            // } catch (punchError) {
+            //   console.error("❌ 打刻処理でエラーが発生:", punchError.message);
+            // }
           } else {
             console.log("⚠️ 打刻修正画面への自動遷移に失敗しました");
           }
@@ -239,21 +239,72 @@ process.on("uncaughtException", (error) => {
   process.exit(1);
 });
 
-// コマンドライン引数で実行する処理を決定
-const action = process.argv[2];
-if (action === "jobcan") {
-  openJobcan().catch((error) => {
-    console.error("Jobcan error:", error);
-    cleanup();
-    process.exit(1);
-  });
-} else if (action === "slackwf") {
-  openSlackWF().catch((error) => {
-    console.error("SlackWF error:", error);
-    cleanup();
-    process.exit(1);
-  });
-} else {
-  console.error("Invalid action. Use 'jobcan' or 'slackwf'");
-  process.exit(1);
+async function executeJobcanAction(page, mode, startTime, endTime) {
+  console.log(`🔄 打刻処理開始: ${mode}`);
+
+  try {
+    switch (mode) {
+      case "start":
+        console.log("🏢 出勤打刻のみ実行");
+        await performStartTimePunch(page, startTime);
+        break;
+
+      case "end":
+        console.log("🏠 退勤打刻のみ実行");
+        await performEndTimePunch(page, endTime);
+        break;
+
+      case "both":
+        console.log("🏢🏠 出勤・退勤打刻を実行");
+        await performStartTimePunch(page, startTime);
+        await page.waitForTimeout(2000);
+        await performEndTimePunch(page, endTime);
+        break;
+    }
+
+    console.log(`✅ 打刻処理完了: ${mode}`);
+  } catch (error) {
+    console.error(`❌ 打刻処理エラー (${mode}):`, error.message);
+    throw error;
+  }
 }
+
+const ACTION_MAP = {
+  // Jobcan関連
+  "jobcan-both": () => openJobcan("both"), // 出勤・退勤両方
+  "jobcan-start": () => openJobcan("start"), // 出勤のみ
+  "jobcan-end": () => openJobcan("end"), // 退勤のみ
+
+  // SlackWF関連（将来対応）
+  slackwf: () => openSlackWF(),
+  "slackwf-start": () => openSlackWF("start"),
+  "slackwf-end": () => openSlackWF("end"),
+};
+
+async function main() {
+  const action = process.argv[2];
+
+  if (!action) {
+    console.error("❌ アクションが指定されていません");
+    console.log("使用可能なアクション:", Object.keys(ACTION_MAP).join(", "));
+    process.exit(1);
+  }
+
+  const actionFunction = ACTION_MAP[action];
+
+  if (!actionFunction) {
+    console.error(`❌ 不正なアクション: ${action}`);
+    console.log("使用可能なアクション:", Object.keys(ACTION_MAP).join(", "));
+    process.exit(1);
+  }
+
+  try {
+    await actionFunction();
+  } catch (error) {
+    console.error(`❌ ${action} でエラー:`, error.message);
+    cleanup();
+    process.exit(1);
+  }
+}
+
+main();
