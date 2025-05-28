@@ -34,6 +34,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
       ipcRenderer.invoke("jobcan:execute", action),
   },
 
+  slackwf: {
+    execute: (action: CheckActionType) =>
+      ipcRenderer.invoke("slackwf:execute", action),
+  },
+
   // === 設定管理API ===
   config: {
     getAll: () => ipcRenderer.invoke("config:get-all"),

@@ -2,6 +2,7 @@ import { ipcMain } from "electron";
 import { playwrightHandlers } from "./playwright";
 import { settingsHandlers } from "./settings";
 import { jobcanHandlers } from "./jobcan";
+import { slackwfHandlers } from "./slackwf";
 
 export function registerHandlers() {
   // Playwright関連のハンドラー
@@ -16,6 +17,11 @@ export function registerHandlers() {
 
   // Jobcan関連のハンドラー
   for (const [channel, handler] of Object.entries(jobcanHandlers)) {
+    ipcMain.handle(channel, handler);
+  }
+
+  // SlackWF関連のハンドラー
+  for (const [channel, handler] of Object.entries(slackwfHandlers)) {
     ipcMain.handle(channel, handler);
   }
 }

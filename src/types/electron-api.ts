@@ -13,6 +13,13 @@ export interface ElectronAPI {
     }>;
   };
 
+  slackwf: {
+    execute: (action: CheckActionType) => Promise<{
+      success: boolean;
+      message: string;
+    }>;
+  };
+
   // Configuration management
   config: {
     getAll: () => Promise<{
