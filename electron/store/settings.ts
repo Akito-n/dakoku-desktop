@@ -11,8 +11,10 @@ export interface AppConfig {
     password: string;
   };
   slackwf: {
-    email: string;
-    password: string;
+    workspaceName: string;
+    googleEmail: string;
+    googlePassword: string;
+    targetChannelUrl: string;
   };
   attendance: {
     startTime: string; // "09:00" HH:MM形式
@@ -36,8 +38,10 @@ const defaultConfig: AppConfig = {
     password: "",
   },
   slackwf: {
-    email: "",
-    password: "",
+    workspaceName: "",
+    googleEmail: "",
+    googlePassword: "",
+    targetChannelUrl: "",
   },
   attendance: {
     startTime: "09:00",
@@ -60,7 +64,6 @@ export const settingStore = new Store<AppConfig>({
 export const getJobcanUrl = (): string => {
   return settingStore.get("urls.jobcan");
 };
-
 export const getSlackWFUrl = (): string => {
   return settingStore.get("urls.slackwf");
 };
@@ -68,10 +71,6 @@ export const getSlackWFUrl = (): string => {
 // 設定更新のヘルパー関数
 export const setJobcanUrl = (url: string): void => {
   settingStore.set("urls.jobcan", url);
-};
-
-export const setSlackWFUrl = (url: string): void => {
-  settingStore.set("urls.slackwf", url);
 };
 
 // 全設定取得
@@ -128,4 +127,59 @@ export const clearJobcanCredentials = () => {
     email: "",
     password: "",
   });
+};
+
+// === SlackWF設定のヘルパー関数 ===
+
+// SlackWF設定の取得・更新
+export const getSlackWFConfig = () => {
+  return settingStore.get("slackwf");
+};
+
+export const setSlackWFConfig = (config: Partial<AppConfig["slackwf"]>) => {
+  const currentConfig = getSlackWFConfig();
+  const newConfig = { ...currentConfig, ...config };
+  settingStore.set("slackwf", newConfig);
+  return newConfig;
+};
+
+// 個別設定用のヘルパー関数
+export const setSlackWFCredentials = (
+  workspaceName: string,
+  googleEmail: string,
+  googlePassword: string,
+) => {
+  return setSlackWFConfig({
+    workspaceName,
+    googleEmail,
+    googlePassword,
+  });
+};
+
+export const setSlackWFTargetChannel = (targetChannelUrl: string) => {
+  return setSlackWFConfig({
+    targetChannelUrl,
+  });
+};
+
+export const clearSlackWFCredentials = () => {
+  return setSlackWFConfig({
+    workspaceName: "",
+    googleEmail: "",
+    googlePassword: "",
+    targetChannelUrl: "",
+  });
+};
+
+export const setSlackWFUrl = (url: string): void => {
+  settingStore.set("urls.slackwf", url);
+};
+
+export const isSlackWFConfigured = (): boolean => {
+  const config = getSlackWFConfig();
+  return !!(
+    config?.workspaceName &&
+    config?.googleEmail &&
+    config?.googlePassword
+  );
 };
