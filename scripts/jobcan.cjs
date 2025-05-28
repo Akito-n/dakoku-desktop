@@ -89,6 +89,9 @@ async function clickPunchButton(page, actionType = "出勤") {
       throw new Error("打刻ボタンが見つかりません");
     }
 
+    console.log(`🔘 ${actionType}打刻ボタンをクリックします-debug`);
+    return true;
+
     // ボタンをクリック
     await punchButton.click();
 

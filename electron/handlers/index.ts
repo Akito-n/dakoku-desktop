@@ -1,6 +1,7 @@
 import { ipcMain } from "electron";
 import { playwrightHandlers } from "./playwright";
 import { settingsHandlers } from "./settings";
+import { jobcanHandlers } from "./jobcan";
 
 export function registerHandlers() {
   // Playwright関連のハンドラー
@@ -10,6 +11,11 @@ export function registerHandlers() {
 
   // 設定関連のハンドラー
   for (const [channel, handler] of Object.entries(settingsHandlers)) {
+    ipcMain.handle(channel, handler);
+  }
+
+  // Jobcan関連のハンドラー
+  for (const [channel, handler] of Object.entries(jobcanHandlers)) {
     ipcMain.handle(channel, handler);
   }
 }

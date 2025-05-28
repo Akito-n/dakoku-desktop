@@ -1,3 +1,7 @@
+const fs = require("node:fs");
+const path = require("node:path");
+// プロセス管理用のPIDファイル
+const PID_FILE = path.join(process.cwd(), "temp", "playwright.pid");
 // 既存のプロセスをクリーンアップ
 function cleanupExistingProcess() {
   if (fs.existsSync(PID_FILE)) {

@@ -6,26 +6,19 @@ import {
   getAttendanceConfig,
   formatTimeForJobcan,
 } from "../store/settings";
+import type { IpcMainInvokeEvent } from "electron";
 
-export const playwrightHandlers = {
-  "playwright:open-jobcan": async () => {
-    console.log("=== 詳細デバッグモード開始 ===");
-
-    // electron-storeから設定を取得
+export const jobcanHandlers = {
+  "jobcan:execute": async (
+    _event: IpcMainInvokeEvent,
+    action: "check-both" | "check-in" | "check-out",
+  ) => {
     const jobcanUrl = getJobcanUrl();
     const attendanceConfig = getAttendanceConfig();
     const startTime = Date.now();
 
     const jobcanConfig = getJobcanConfig();
 
-    console.log("🔧 設定情報:");
-    console.log(`  - URL: ${jobcanUrl}`);
-    console.log(`  - Email: ${jobcanConfig.email ? "設定済み" : "未設定"}`);
-    console.log(
-      `  - Password: ${jobcanConfig.password ? "設定済み" : "未設定"}`,
-    );
-
-    // 認証情報のバリデーション
     if (!jobcanConfig.email || !jobcanConfig.password) {
       const missingFields = [];
       if (!jobcanConfig.email) missingFields.push("メールアドレス");
@@ -36,6 +29,13 @@ export const playwrightHandlers = {
       throw new Error(errorMessage);
     }
 
+    const actionMap = {
+      "check-both": "jobcan-both",
+      "check-in": "jobcan-start",
+      "check-out": "jobcan-end",
+    };
+    const subcommand = actionMap[action];
+
     return new Promise((resolve, reject) => {
       const scriptPath = path.join(
         process.cwd(),
@@ -44,21 +44,18 @@ export const playwrightHandlers = {
       );
 
       // 環境変数で認証情報を子プロセスに渡す
-      const child = spawn("node", [scriptPath, "jobcan"], {
+      const child = spawn("node", [scriptPath, subcommand], {
         stdio: "inherit",
         env: {
           ...process.env,
           JOBCAN_URL: jobcanUrl,
           JOBCAN_EMAIL: jobcanConfig.email,
           JOBCAN_PASSWORD: jobcanConfig.password,
-          JOBCAN_START_TIME: formatTimeForJobcan(attendanceConfig.startTime), // "0900"
+          JOBCAN_START_TIME: formatTimeForJobcan(attendanceConfig.startTime),
           JOBCAN_END_TIME: formatTimeForJobcan(attendanceConfig.endTime),
           EXIT_METHOD: "graceful", // immediate, graceful, natural を切り替え可能
         },
       });
-
-      console.log(`🚀 子プロセス起動: PID ${child.pid}`);
-      console.log(`🔐 認証情報を環境変数で渡しました`);
 
       // すべてのイベントに詳細ログを追加
       child.on("spawn", () => {
@@ -120,11 +117,5 @@ export const playwrightHandlers = {
         }
       }, 5000);
     });
-  },
-
-  "playwright:open-slackwf": async () => {
-    // SlackWF版も同様に実装（将来対応）
-    console.log("SlackWF機能は未実装です");
-    throw new Error("SlackWF機能は未実装です");
   },
 };

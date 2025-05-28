@@ -10,6 +10,8 @@ import {
   Icon,
   ButtonGroup,
   Divider,
+  OverlayToaster,
+  type IconName,
 } from "@blueprintjs/core";
 import SettingsPage from "./features/settings/components/SettingsPage";
 import CurrentTimeDisplay from "./features/common/components/CurrentTimeDisplay";
@@ -18,11 +20,39 @@ type CurrentPage = "home" | "settings";
 
 function App() {
   const [currentPage, setCurrentPage] = useState<CurrentPage>("home");
+  const [loading, setLoading] = useState<string | null>(null);
 
-  const handleJobcanTest = async () => {
+  const showToast = (message: string, intent: Intent, icon: IconName) => {
+    OverlayToaster.create({ position: "top" }).show({
+      message,
+      intent,
+      icon,
+      timeout: intent === Intent.DANGER ? 5000 : 3000,
+    });
+  };
+
+  const handleJobcanCheckBoth = async () => {
     try {
-      await window.electronAPI.openJobcan();
-      console.log("Jobcan navigation completed");
+      await window.electronAPI.jobcan.execute("check-both");
+      console.log("両方の打刻完了");
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
+
+  const handleJobcanCheckIn = async () => {
+    try {
+      await window.electronAPI.jobcan.execute("check-in");
+      console.log("出勤打刻完了");
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
+
+  const handleJobcanCheckOut = async () => {
+    try {
+      await window.electronAPI.jobcan.execute("check-out");
+      console.log("退勤打刻完了");
     } catch (error) {
       console.error("Error:", error);
     }
@@ -30,8 +60,8 @@ function App() {
 
   const handleSlackWFTest = async () => {
     try {
-      await window.electronAPI.openSlackWF();
-      console.log("SlackWF navigation completed");
+      console.log("SlackWF機能は未実装です");
+      showToast("SlackWF機能は未実装です", Intent.WARNING, "info-sign");
     } catch (error) {
       console.error("Error:", error);
     }
@@ -42,7 +72,6 @@ function App() {
     switch (currentPage) {
       case "settings":
         return <SettingsPage />;
-      // case "home":
       default:
         return (
           <div style={{ maxWidth: "800px", margin: "0 auto", padding: "20px" }}>
@@ -50,7 +79,6 @@ function App() {
               elevation={2}
               style={{ textAlign: "center", padding: "40px" }}
             >
-              {/* メイン時間表示 */}
               <div style={{ marginBottom: "40px" }}>
                 <CurrentTimeDisplay
                   size="large"
@@ -62,29 +90,73 @@ function App() {
                 />
               </div>
 
-              {/* アクションボタン */}
-              <ButtonGroup large vertical style={{ minWidth: "300px" }}>
-                <Button
-                  intent={Intent.PRIMARY}
-                  onClick={handleJobcanTest}
-                  icon="office"
-                  large
-                  style={{ height: "60px", fontSize: "16px" }}
-                >
-                  Jobcan を起動
-                </Button>
+              <div style={{ marginBottom: "30px" }}>
+                <ButtonGroup large vertical style={{ minWidth: "320px" }}>
+                  <Button
+                    intent={Intent.PRIMARY}
+                    onClick={handleJobcanCheckBoth}
+                    icon="office"
+                    large
+                    loading={loading === "both"}
+                    style={{
+                      height: "65px",
+                      fontSize: "16px",
+                      fontWeight: "600",
+                    }}
+                  >
+                    {loading === "both" ? "打刻実行中..." : "Jobcan 出退勤"}
+                  </Button>
+
+                  {/* 🔧 サブオプション：個別打刻（小さめ） */}
+                  <div style={{ marginTop: "12px" }}>
+                    <ButtonGroup fill style={{ display: "flex", gap: "2px" }}>
+                      <Button
+                        intent={Intent.SUCCESS}
+                        onClick={handleJobcanCheckIn}
+                        icon="log-in"
+                        loading={loading === "clock-in"}
+                        style={{
+                          flex: 1,
+                          height: "45px",
+                          fontSize: "14px",
+                        }}
+                      >
+                        {loading === "clock-in" ? "実行中..." : "出勤"}
+                      </Button>
+                      <Button
+                        intent={Intent.SUCCESS}
+                        onClick={handleJobcanCheckOut}
+                        icon="log-out"
+                        loading={loading === "clock-out"}
+                        style={{
+                          flex: 1,
+                          height: "45px",
+                          fontSize: "14px",
+                        }}
+                      >
+                        {loading === "clock-out" ? "実行中..." : "退勤"}
+                      </Button>
+                    </ButtonGroup>
+                  </div>
+                </ButtonGroup>
+              </div>
+
+              <Divider style={{ margin: "30px 0" }} />
+
+              {/* その他のアクション */}
+              <ButtonGroup style={{ marginBottom: "20px" }}>
                 <Button
                   intent={Intent.NONE}
                   onClick={handleSlackWFTest}
                   icon="chat"
                   large
-                  style={{ height: "60px", fontSize: "16px" }}
+                  style={{ height: "50px", fontSize: "14px" }}
                 >
                   SlackWF を起動
                 </Button>
               </ButtonGroup>
 
-              <Divider style={{ margin: "30px 0" }} />
+              <Divider style={{ margin: "20px 0" }} />
 
               {/* 設定ボタン */}
               <Button
@@ -104,7 +176,7 @@ function App() {
 
   return (
     <div style={{ minHeight: "100vh" }}>
-      {/* ナビゲーションバー - 修正版 */}
+      {/* ナビゲーションバー */}
       <Navbar
         style={{
           backgroundColor: "#ffffff",

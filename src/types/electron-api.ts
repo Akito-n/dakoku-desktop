@@ -1,8 +1,17 @@
+import type { CheckActionType } from "./check";
+
 // === 共通のElectronAPI型定義 ===
 export interface ElectronAPI {
   // Playwright operations
   openJobcan: () => Promise<void>;
   openSlackWF: () => Promise<void>;
+
+  jobcan: {
+    execute: (action: CheckActionType) => Promise<{
+      success: boolean;
+      message: string;
+    }>;
+  };
 
   // Configuration management
   config: {

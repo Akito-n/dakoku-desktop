@@ -1,4 +1,5 @@
 import { ipcRenderer, contextBridge } from "electron";
+import type { CheckActionType } from "../src/types/check";
 
 // --------- Expose some API to the Renderer process ---------
 contextBridge.exposeInMainWorld("ipcRenderer", {
@@ -27,6 +28,11 @@ contextBridge.exposeInMainWorld("ipcRenderer", {
 contextBridge.exposeInMainWorld("electronAPI", {
   openJobcan: () => ipcRenderer.invoke("playwright:open-jobcan"),
   openSlackWF: () => ipcRenderer.invoke("playwright:open-slackwf"),
+
+  jobcan: {
+    execute: (action: CheckActionType) =>
+      ipcRenderer.invoke("jobcan:execute", action),
+  },
 
   // === 設定管理API ===
   config: {
