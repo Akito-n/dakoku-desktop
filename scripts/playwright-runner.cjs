@@ -1,7 +1,7 @@
 // scripts/playwright-runner.cjs
 const { chromium } = require("playwright");
-const fs = require("fs");
-const path = require("path");
+const fs = require("node:fs");
+const path = require("node:path");
 
 const {
   performStartTimePunch,
