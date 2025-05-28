@@ -50,6 +50,26 @@ contextBridge.exposeInMainWorld("electronAPI", {
     setAttendance: (startTime: string, endTime: string) =>
       ipcRenderer.invoke("config:set-attendance", startTime, endTime),
 
+    // SlackWF設定
+    getSlackWF: () => ipcRenderer.invoke("config:get-slackwf"),
+    setSlackWFCredentials: (
+      workspaceName: string,
+      googleEmail: string,
+      googlePassword: string,
+    ) =>
+      ipcRenderer.invoke(
+        "config:set-slackwf-credentials",
+        workspaceName,
+        googleEmail,
+        googlePassword,
+      ),
+    setSlackWFUrl: (url: string) =>
+      ipcRenderer.invoke("config:set-slackwf-url", url),
+    setSlackWFChannel: (targetChannelUrl: string) =>
+      ipcRenderer.invoke("config:set-slackwf-channel", targetChannelUrl),
+    clearSlackWF: () => ipcRenderer.invoke("config:clear-slackwf"),
+    testSlackWF: () => ipcRenderer.invoke("config:test-slackwf"),
+
     // 一般設定
     setSetting: (key: string, value: boolean) =>
       ipcRenderer.invoke("config:set-setting", key, value),

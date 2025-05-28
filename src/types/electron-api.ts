@@ -42,6 +42,43 @@ export interface ElectronAPI {
       isConfigured: boolean;
     }>;
     testJobcan: () => Promise<{ success: boolean; message: string }>;
+
+    // SlackWF
+    getSlackWF: () => Promise<{
+      workspaceName: string;
+      googleEmail: string;
+      googlePassword: string;
+      targetChannelUrl: string;
+      url: string;
+      isConfigured: boolean;
+    }>;
+    setSlackWFCredentials: (
+      workspaceName: string,
+      googleEmail: string,
+      googlePassword: string,
+    ) => Promise<{
+      workspaceName: string;
+      googleEmail: string;
+      googlePassword: string;
+      targetChannelUrl: string;
+      isConfigured: boolean;
+    }>;
+    setSlackWFUrl: (url: string) => Promise<{ url: string }>;
+    setSlackWFChannel: (targetChannelUrl: string) => Promise<{
+      workspaceName: string;
+      googleEmail: string;
+      googlePassword: string;
+      targetChannelUrl: string;
+    }>;
+    clearSlackWF: () => Promise<{
+      workspaceName: string;
+      googleEmail: string;
+      googlePassword: string;
+      targetChannelUrl: string;
+      isConfigured: boolean;
+    }>;
+    testSlackWF: () => Promise<{ success: boolean; message: string }>;
+
     getAttendance: () => Promise<{
       startTime: string;
       endTime: string;

@@ -10,6 +10,13 @@ import {
   type AppConfig,
   getAttendanceConfig,
   setAttendanceConfig,
+  isSlackWFConfigured,
+  clearSlackWFCredentials,
+  setSlackWFTargetChannel,
+  setSlackWFUrl,
+  setSlackWFCredentials,
+  getSlackWFConfig,
+  getSlackWFUrl,
 } from "../store/settings";
 
 // isConfigured判定のヘルパー関数
@@ -94,6 +101,93 @@ export const settingsHandlers = {
 
     // TODO: 実際のログインテスト（将来実装）
     console.log("Jobcan設定テスト完了（現在は設定値チェックのみ）");
+    return {
+      success: true,
+      message: "設定値は有効です（実際のログインテストは未実装）",
+    };
+  },
+
+  // === SlackWF設定 ===
+  "config:get-slackwf": async (_event: IpcMainInvokeEvent) => {
+    console.log("SlackWF設定を取得");
+    const config = getSlackWFConfig();
+    const url = getSlackWFUrl();
+    return {
+      ...config,
+      url,
+      isConfigured: isSlackWFConfigured(), // 動的に計算
+    };
+  },
+
+  "config:set-slackwf-credentials": async (
+    _event: IpcMainInvokeEvent,
+    workspaceName: string,
+    googleEmail: string,
+    googlePassword: string,
+  ) => {
+    console.log(
+      `SlackWF認証情報を設定: workspace=${workspaceName}, email=${googleEmail ? "***" : "(空)"}`,
+    );
+
+    const result = setSlackWFCredentials(
+      workspaceName,
+      googleEmail,
+      googlePassword,
+    );
+    console.log(`SlackWF設定完了: isConfigured=${isSlackWFConfigured()}`);
+    return {
+      ...result,
+      isConfigured: isSlackWFConfigured(),
+    };
+  },
+
+  "config:set-slackwf-url": async (_event: IpcMainInvokeEvent, url: string) => {
+    console.log(`SlackWFのURLを設定: ${url}`);
+
+    // URLバリデーション
+    try {
+      new URL(url);
+    } catch {
+      throw new Error("有効なURLを入力してください");
+    }
+
+    setSlackWFUrl(url);
+    return { url };
+  },
+
+  "config:set-slackwf-channel": async (
+    _event: IpcMainInvokeEvent,
+    targetChannelUrl: string,
+  ) => {
+    console.log(`SlackWFのチャンネルURLを設定: ${targetChannelUrl}`);
+
+    if (!targetChannelUrl) {
+      throw new Error("チャンネルURLを入力してください");
+    }
+
+    const result = setSlackWFTargetChannel(targetChannelUrl);
+    return result;
+  },
+
+  "config:clear-slackwf": async (_event: IpcMainInvokeEvent) => {
+    console.log("SlackWF設定をクリア");
+    const result = clearSlackWFCredentials();
+    console.log("SlackWF設定をクリアしました");
+    return {
+      ...result,
+      isConfigured: false,
+    };
+  },
+
+  "config:test-slackwf": async (_event: IpcMainInvokeEvent) => {
+    console.log("SlackWF設定のテスト");
+
+    if (!isSlackWFConfigured()) {
+      throw new Error("SlackWFの設定が完了していません");
+    }
+
+    // TODO: 実際のログインテスト（将来実装）
+    console.log("SlackWF設定テスト完了（現在は設定値チェックのみ）");
     return {
       success: true,
       message: "設定値は有効です（実際のログインテストは未実装）",
