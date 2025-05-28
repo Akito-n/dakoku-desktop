@@ -60,10 +60,19 @@ function App() {
 
   const handleSlackWFTest = async () => {
     try {
-      console.log("SlackWF機能は未実装です");
-      showToast("SlackWF機能は未実装です", Intent.WARNING, "info-sign");
+      setLoading("slackwf");
+      await window.electronAPI.slackwf.execute("check-both");
+      console.log("SlackWF メッセージ送信完了");
+      showToast("SlackWF メッセージを送信しました", Intent.SUCCESS, "tick");
     } catch (error) {
-      console.error("Error:", error);
+      console.error("SlackWF Error:", error);
+      showToast(
+        error instanceof Error ? error.message : "SlackWF処理に失敗しました",
+        Intent.DANGER,
+        "error",
+      );
+    } finally {
+      setLoading(null);
     }
   };
 

@@ -16,6 +16,14 @@ const {
   setupPageEventListeners,
 } = require("./process.cjs");
 
+const {
+  signInToWorkspace,
+  signInWithGoogle,
+  navigateToChannel,
+  sendStartWorkMessage,
+  sendEndWorkMessage,
+} = require("./slack.cjs");
+
 // プロセス管理用のPIDファイル
 const PID_FILE = path.join(process.cwd(), "temp", "playwright.pid");
 
@@ -224,13 +232,113 @@ async function openJobcan(mode = "both") {
   }
 }
 
-async function openSlackWF() {
-  // 同様の処理をSlackWF用にも実装（将来対応）
-  console.log("SlackWF機能は未実装です");
-  cleanup();
-  process.exit(1);
+async function openSlackWF(mode = "both") {
+  cleanupExistingProcess();
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+  recordCurrentPid();
+
+  const slackwfUrl =
+    process.env.SLACKWF_URL || "https://slack.com/intl/ja-jp/workspace-signin";
+  const workspaceName = process.env.SLACKWF_WORKSPACE;
+  const googleEmail = process.env.SLACKWF_GOOGLE_EMAIL;
+  const googlePassword = process.env.SLACKWF_GOOGLE_PASSWORD;
+  const channelUrl = process.env.SLACKWF_CHANNEL_URL;
+
+  // 認証情報の確認
+  if (!workspaceName || !googleEmail || !googlePassword) {
+    const error = "SlackWF認証情報が環境変数から取得できませんでした";
+    console.error("❌", error);
+    cleanup();
+    process.exit(1);
+  }
+
+  const browser = await chromium.launch({
+    headless: false,
+    slowMo: 100,
+  });
+
+  const page = await browser.newPage();
+
+  page.on("dialog", async (dialog) => {
+    console.log(`ダイアログタイプ: ${dialog.type()}`);
+    console.log(`メッセージ: ${dialog.message()}`);
+    await dialog.dismiss();
+  });
+  // const page = await browser.newPage();
+
+  try {
+    // SlackWFのワークスペースサインインページに移動
+    await page.goto(slackwfUrl);
+
+    // ワークスペースにサインイン
+    await signInToWorkspace(page, workspaceName);
+
+    // 少し待機してからGoogle認証
+    await page.waitForTimeout(2000);
+
+    // Google認証でサインイン
+    const slackPage = await signInWithGoogle(page, googleEmail, googlePassword);
+
+    if (!slackPage) {
+      throw new Error("Slack認証に失敗しました");
+    }
+
+    // Slack画面の読み込み完了を待機
+    await slackPage.waitForTimeout(5000);
+
+    // 指定チャンネルに遷移（設定されている場合）
+    if (channelUrl) {
+      await navigateToChannel(slackPage, channelUrl);
+    }
+
+    // 出勤・退勤メッセージの処理
+    const startTime = process.env.SLACKWF_START_TIME || "09:00";
+    const endTime = process.env.SLACKWF_END_TIME || "18:00";
+
+    await executeSlackWFAction(slackPage, mode, startTime, endTime);
+
+    // ページイベントリスナーを設定
+    setupPageEventListeners(browser, slackPage);
+
+    // メインループ（待機）
+    await new Promise(() => {});
+  } catch (error) {
+    console.error("❌ SlackWF処理でエラーが発生:", error.message);
+    await browser.close();
+    cleanup();
+    throw error;
+  }
 }
 
+async function executeSlackWFAction(page, mode, startTime, endTime) {
+  console.log(`🔄 SlackWFメッセージ送信開始: ${mode}`);
+
+  try {
+    switch (mode) {
+      case "start":
+        console.log("🏢 出勤メッセージのみ送信");
+        await sendStartWorkMessage(page, startTime);
+        break;
+
+      case "end":
+        console.log("🏠 退勤メッセージのみ送信");
+        await sendEndWorkMessage(page, endTime);
+        break;
+
+      case "both":
+        console.log("🏢🏠 出勤・退勤メッセージを送信");
+        await sendStartWorkMessage(page, startTime);
+        await page.waitForTimeout(2000);
+        await sendEndWorkMessage(page, endTime);
+        break;
+    }
+
+    console.log(`✅ SlackWFメッセージ送信完了: ${mode}`);
+  } catch (error) {
+    console.error(`❌ SlackWFメッセージ送信エラー (${mode}):`, error.message);
+    throw error;
+  }
+}
 // プロセス終了時のクリーンアップを確実に実行
 process.on("exit", cleanup);
 process.on("uncaughtException", (error) => {
@@ -275,8 +383,7 @@ const ACTION_MAP = {
   "jobcan-start": () => openJobcan("start"), // 出勤のみ
   "jobcan-end": () => openJobcan("end"), // 退勤のみ
 
-  // SlackWF関連（将来対応）
-  slackwf: () => openSlackWF(),
+  "slackwf-both": () => openSlackWF("both"),
   "slackwf-start": () => openSlackWF("start"),
   "slackwf-end": () => openSlackWF("end"),
 };
