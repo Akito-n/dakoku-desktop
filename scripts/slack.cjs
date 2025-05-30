@@ -181,7 +181,8 @@ async function signInWithGoogle(
 
       // Google認証完了後、直接目的のSlackチャンネルに遷移
 
-      const newPage = await page.context().newPage();
+      const context = page.context();
+      const newPage = await context.newPage();
 
       // デフォルトのチャンネルURL、または設定されたターゲットURL
       const finalTargetUrl =
@@ -189,8 +190,8 @@ async function signInWithGoogle(
         "https://app.slack.com/client/T4Y2T7AMN/C059VF7J8TV";
 
       await newPage.goto(finalTargetUrl, {
-        waitUntil: "networkidle",
-        timeout: 30000,
+        waitUntil: "domcontentloaded",
+        timeout: 45000,
       });
 
       console.log("✅ 新しいタブで目的のSlackチャンネルに遷移完了");
@@ -203,58 +204,6 @@ async function signInWithGoogle(
 
       console.log("📋 最終的なページURL:", newPage.url());
 
-      // メッセージ入力欄を複数の方法で確認
-      // const messageInputSelectors = [
-      //   '[data-qa="message_input"]',
-      //   '[data-qa="message-input"]',
-      //   '.ql-editor[data-qa="message_input"]',
-      //   '[role="textbox"][data-qa*="message"]',
-      //   '[contenteditable="true"][data-qa*="message"]',
-      // ];
-
-      // let messageInputFound = false;
-      // for (const selector of messageInputSelectors) {
-      //   const inputExists = await page
-      //     .locator(selector)
-      //     .isVisible()
-      //     .catch(() => false);
-      //   if (inputExists) {
-      //     console.log(`📝 メッセージ入力欄を発見: ${selector}`);
-      //     messageInputFound = true;
-      //     break;
-      //   }
-      // }
-
-      // if (!messageInputFound) {
-      //   console.log("❌ メッセージ入力欄が見つかりません");
-      //   console.log("🔍 デバッグ: 現在のページ要素を確認");
-
-      //   // ページの主要な要素を確認
-      //   const bodyText = await page
-      //     .locator("body")
-      //     .textContent()
-      //     .catch(() => "");
-      //   if (
-      //     bodyText.includes("ワークスペースが見つかりません") ||
-      //     bodyText.includes("アクセスできません")
-      //   ) {
-      //     console.log("❌ ワークスペースアクセスエラーの可能性");
-      //   }
-
-      //   // ページのスクリーンショットを取得してデバッグ
-      //   try {
-      //     await page.screenshot({
-      //       path: "debug-slack-login.png",
-      //       fullPage: true,
-      //     });
-      //     console.log(
-      //       "📸 デバッグ用スクリーンショットを保存: debug-slack-login.png",
-      //     );
-      //   } catch (screenshotError) {
-      //     console.log("⚠️ スクリーンショット保存失敗");
-      //   }
-      // }
-
       // Slackワークスペースに正常に遷移したかチェック
       const finalUrl = newPage.url();
       if (
@@ -263,275 +212,17 @@ async function signInWithGoogle(
         messageInputFound
       ) {
         console.log("✅ Slackワークスペースへの遷移成功");
-        return true;
+        return newPage;
       }
     }
 
-    return false;
+    return newPage;
   } catch (error) {
     console.error(`❌ Google認証エラー: ${error.message}`);
     throw error;
   }
 }
 
-// async function handleSlackAppPopup(page) {
-//   try {
-//     console.log("🔍 Slackアプリ起動ポップアップをチェック中...");
-//     console.log("📋 現在のURL:", page.url());
-
-//     // ダイアログハンドラーを設定（より積極的に）
-//     const dialogHandler = async (dialog) => {
-//       console.log(`🔔 ダイアログ検出: ${dialog.type()}`);
-//       console.log(`📝 ダイアログメッセージ: "${dialog.message()}"`);
-
-//       if (
-//         dialog.message().includes("Slack") ||
-//         dialog.message().includes("アプリ") ||
-//         dialog.message().includes("開く")
-//       ) {
-//         console.log("🚫 Slackアプリ起動ダイアログを拒否");
-//         await dialog.dismiss(); // キャンセルを選択
-//       } else {
-//         console.log("✅ その他のダイアログを承認");
-//         await dialog.accept();
-//       }
-//     };
-
-//     // ダイアログハンドラーをセット
-//     page.on("dialog", dialogHandler);
-
-//     // ポップアップの出現を少し長めに待機
-//     await page.waitForTimeout(3000);
-
-//     // ダイアログが出現する可能性のあるアクションを実行
-//     console.log("🖱️ ページをクリックしてダイアログを誘発");
-//     try {
-//       // ページの中央をクリックしてみる
-//       await page.mouse.click(400, 300);
-//       await page.waitForTimeout(2000);
-//     } catch (clickError) {
-//       console.log("⚠️ クリック誘発失敗");
-//     }
-
-//     // より包括的なポップアップ検出
-//     const popupSelectors = [
-//       "text=Slack.app を開きますか？",
-//       "text=Slack.app を開きますか",
-//       "text*=Slack.app を開き",
-//       "text*=アプリケーションを開く",
-//       '[role="dialog"]',
-//       ".modal",
-//       "[data-qa*='modal']",
-//       "[data-qa*='popup']",
-//     ];
-
-//     let popupDetected = false;
-//     let detectedSelector = "";
-
-//     for (const selector of popupSelectors) {
-//       try {
-//         const element = page.locator(selector);
-//         if (await element.isVisible()) {
-//           popupDetected = true;
-//           detectedSelector = selector;
-//           console.log(`✅ ポップアップを検出: ${selector}`);
-//           break;
-//         }
-//       } catch (e) {
-//         // 次のセレクターを試す
-//       }
-//     }
-
-//     if (popupDetected) {
-//       console.log("🚫 Slackアプリ起動ポップアップを処理します");
-
-//       // キャンセルボタンをより包括的に検出
-//       const cancelSelectors = [
-//         'button:has-text("キャンセル")',
-//         'button[role="button"]:has-text("キャンセル")',
-//         "text=キャンセル",
-//         '[data-qa*="cancel"]',
-//         '[aria-label*="キャンセル"]',
-//         ".cancel-button",
-//         // 画面左側のボタン（通常キャンセルは左）
-//         "button:first-of-type",
-//       ];
-
-//       let cancelClicked = false;
-
-//       for (const cancelSelector of cancelSelectors) {
-//         try {
-//           const cancelButton = page.locator(cancelSelector);
-
-//           if (await cancelButton.isVisible()) {
-//             console.log(`🖱️ キャンセルボタンをクリック試行: ${cancelSelector}`);
-//             await cancelButton.click();
-
-//             // クリック後、ポップアップが消えるまで待機
-//             await page.waitForTimeout(2000);
-
-//             // ポップアップが実際に消えたか確認
-//             const stillVisible = await page
-//               .locator(detectedSelector)
-//               .isVisible()
-//               .catch(() => false);
-//             if (!stillVisible) {
-//               console.log("✅ ポップアップが正常にキャンセルされました");
-//               cancelClicked = true;
-//               break;
-//             } else {
-//               console.log("⚠️ ポップアップがまだ表示されています");
-//             }
-//           }
-//         } catch (cancelError) {
-//           console.log(
-//             `❌ キャンセルボタン ${cancelSelector} でエラー:`,
-//             cancelError.message,
-//           );
-//         }
-//       }
-
-//       // キャンセルボタンでうまくいかない場合の代替手段
-//       if (!cancelClicked) {
-//         console.log("🔧 代替手段を試行中...");
-
-//         // ESCキーを試行
-//         console.log("⌨️ ESCキーでポップアップを閉じる試行");
-//         await page.keyboard.press("Escape");
-//         await page.waitForTimeout(1000);
-
-//         // オーバーレイをクリックして閉じる試行
-//         try {
-//           console.log("🖱️ オーバーレイクリックを試行");
-//           await page.mouse.click(50, 50); // 画面左上をクリック
-//           await page.waitForTimeout(1000);
-//         } catch (e) {
-//           console.log("⚠️ オーバーレイクリック失敗");
-//         }
-
-//         // 最終確認
-//         const stillVisible = await page
-//           .locator(detectedSelector)
-//           .isVisible()
-//           .catch(() => false);
-//         if (!stillVisible) {
-//           console.log("✅ 代替手段でポップアップを閉じました");
-//           cancelClicked = true;
-//         }
-//       }
-
-//       if (!cancelClicked) {
-//         console.log("❌ ポップアップを閉じることができませんでした");
-//         // 強制的に処理を続行
-//       }
-//     } else {
-//       console.log("ℹ️ Slackアプリポップアップは検出されませんでした");
-
-//       // デバッグ：画面に表示されている要素を確認
-//       console.log("🔍 デバッグ：現在表示されている要素を確認");
-//       const visibleTexts = await page
-//         .locator(":visible")
-//         .allTextContents()
-//         .catch(() => []);
-//       const relevantTexts = visibleTexts.filter(
-//         (text) =>
-//           text.includes("Slack") ||
-//           text.includes("キャンセル") ||
-//           text.includes("開く") ||
-//           text.includes("アプリ"),
-//       );
-//       console.log("📋 関連するテキスト:", relevantTexts.slice(0, 10));
-//     }
-
-//     // ブラウザ版Slackリンクを処理
-//     console.log("🌐 ブラウザ版Slackリンクを探しています...");
-
-//     try {
-//       // より包括的なブラウザリンク検出
-//       const browserLinkSelectors = [
-//         '[data-qa="ssb_redirect_open_in_browser"]',
-//         'a[href*="aitravel.slack.com"]',
-//         "text=ブラウザで Slack を使用する",
-//         "text=ブラウザでSlackを使用する",
-//         "text*=ブラウザで",
-//         "text*=ブラウザ版",
-//       ];
-
-//       let linkClicked = false;
-
-//       for (const linkSelector of browserLinkSelectors) {
-//         try {
-//           const browserLink = page.locator(linkSelector);
-
-//           if (await browserLink.isVisible()) {
-//             const href = await browserLink
-//               .getAttribute("href")
-//               .catch(() => "N/A");
-//             console.log(
-//               `📋 ブラウザ版リンクを発見: ${linkSelector} -> ${href}`,
-//             );
-
-//             // リンククリック前にダイアログハンドラーを再設定
-//             page.removeAllListeners("dialog");
-//             page.on("dialog", dialogHandler);
-
-//             await browserLink.click();
-//             console.log("✅ ブラウザ版リンクをクリックしました");
-
-//             // クリック後、ダイアログ出現の可能性があるので少し待機
-//             await page.waitForTimeout(3000);
-
-//             // ページ遷移も待機
-//             await page.waitForTimeout(2000);
-//             linkClicked = true;
-//             break;
-//           }
-//         } catch (linkError) {
-//           console.log(
-//             `⚠️ リンク ${linkSelector} の処理でエラー:`,
-//             linkError.message,
-//           );
-//         }
-//       }
-
-//       if (!linkClicked) {
-//         console.log("❌ ブラウザ版リンクが見つかりません");
-//         console.log("🔄 直接ワークスペースURLに遷移します");
-
-//         // 直接遷移前にもダイアログハンドラーを設定
-//         page.removeAllListeners("dialog");
-//         page.on("dialog", dialogHandler);
-
-//         await page.goto("https://aitravel.slack.com/");
-//         await page.waitForTimeout(5000);
-//       }
-//     } catch (error) {
-//       console.log("❌ ブラウザ版リンクの処理でエラー:", error.message);
-//     }
-
-//     // 最終状態の確認
-//     console.log("📋 処理完了後のURL:", page.url());
-//     const pageTitle = await page.title();
-//     console.log("📄 ページタイトル:", pageTitle);
-
-//     // メッセージ入力欄の確認
-//     const messageInputExists = await page
-//       .locator('[data-qa="message_input"]')
-//       .isVisible()
-//       .catch(() => false);
-//     console.log(`📝 メッセージ入力欄の存在: ${messageInputExists}`);
-
-//     // ダイアログハンドラーをクリーンアップ
-//     page.removeAllListeners("dialog");
-
-//     return true;
-//   } catch (error) {
-//     console.error("❌ Slackアプリポップアップ処理エラー:", error.message);
-//     // エラー時もダイアログハンドラーをクリーンアップ
-//     page.removeAllListeners("dialog");
-//     return false;
-//   }
-// }
 // 指定チャンネルに遷移する関数
 async function navigateToChannel(page, channelUrl) {
   try {
@@ -614,10 +305,300 @@ async function sendEndWorkMessage(page, endTime) {
   }
 }
 
+// 勤怠ログボタンをクリックする関数
+async function clickAttendanceLogButton(page) {
+  try {
+    console.log("🔘 勤怠ログボタンを探しています...");
+
+    // 複数のセレクターでボタンを探す
+    const buttonSelectors = [
+      'button[aria-label="勤怠ログ"]',
+      'button[data-qa="composer-workflow-button"]',
+      'button:has-text("勤怠ログ")',
+      ".workflowBtn__qfczc",
+      'button.c-button--primary:has-text("勤怠ログ")',
+    ];
+
+    let button = null;
+    for (const selector of buttonSelectors) {
+      try {
+        button = await page.waitForSelector(selector, { timeout: 3000 });
+        if (button) {
+          console.log(`✅ 勤怠ログボタンを発見: ${selector}`);
+          break;
+        }
+      } catch (e) {
+        console.log(`❌ セレクタ失敗: ${selector}`);
+      }
+    }
+
+    if (!button) {
+      throw new Error("勤怠ログボタンが見つかりません");
+    }
+
+    await button.click();
+    console.log("✅ 勤怠ログボタンをクリックしました");
+
+    // モーダル表示を待機
+    await page.waitForTimeout(2000);
+
+    return true;
+  } catch (error) {
+    console.error(`❌ 勤怠ログボタンクリックエラー: ${error.message}`);
+    throw error;
+  }
+}
+
+// WFモーダル内の入力フィールドに値を設定する関数
+async function fillAttendanceForm(page, type, date, time, note = "") {
+  try {
+    console.log(`📝 勤怠フォームに入力中: ${type}, ${date}, ${time}`);
+
+    // 1. 出勤/退勤の選択（コンボボックス）
+    const typeSelectors = [
+      'input[role="combobox"][aria-label="オプションを選択する"]',
+      "input.c-select_input",
+      'input[placeholder="オプションを選択する"]',
+    ];
+
+    let typeInput = null;
+    for (const selector of typeSelectors) {
+      try {
+        typeInput = await page.waitForSelector(selector, { timeout: 3000 });
+        if (typeInput) {
+          console.log(`✅ 種別入力フィールドを発見: ${selector}`);
+          break;
+        }
+      } catch (e) {
+        console.log(`❌ 種別セレクタ失敗: ${selector}`);
+      }
+    }
+
+    if (typeInput) {
+      await typeInput.click();
+      await typeInput.fill(type); // "出勤" または "退勤"
+      await page.waitForTimeout(500);
+
+      // エンターキーでオプションを選択
+      await typeInput.press("Enter");
+      console.log(`✅ 種別入力完了: ${type}`);
+    } else {
+      console.log("⚠️ 種別入力フィールドが見つかりません");
+    }
+
+    // 2. 出退勤日の入力
+    const dateSelectors = [
+      'input[placeholder="内容を入力する"][type="text"]',
+      ".p-block_kit_plain_text_input_element",
+    ];
+
+    let dateInput = null;
+    for (const selector of dateSelectors) {
+      try {
+        const inputs = await page.$$(selector);
+        // 最初のテキスト入力フィールドが日付用
+        if (inputs.length >= 1) {
+          dateInput = inputs[0];
+          console.log(`✅ 日付入力フィールドを発見: ${selector}`);
+          break;
+        }
+      } catch (e) {
+        console.log(`❌ 日付セレクタ失敗: ${selector}`);
+      }
+    }
+
+    if (dateInput) {
+      await dateInput.fill(date); // "2025/05/30" 形式
+      console.log(`✅ 日付入力完了: ${date}`);
+    } else {
+      console.log("⚠️ 日付入力フィールドが見つかりません");
+    }
+
+    // 3. 時刻の入力
+    let timeInput = null;
+    for (const selector of dateSelectors) {
+      try {
+        const inputs = await page.$$(selector);
+        // 2番目のテキスト入力フィールドが時刻用
+        if (inputs.length >= 2) {
+          timeInput = inputs[1];
+          console.log(`✅ 時刻入力フィールドを発見: ${selector}`);
+          break;
+        }
+      } catch (e) {
+        console.log(`❌ 時刻セレクタ失敗: ${selector}`);
+      }
+    }
+
+    if (timeInput) {
+      await timeInput.fill(time); // "9:00" 形式
+      console.log(`✅ 時刻入力完了: ${time}`);
+    } else {
+      console.log("⚠️ 時刻入力フィールドが見つかりません");
+    }
+
+    // 4. 備考の入力（オプション）
+    if (note) {
+      try {
+        const noteSelectors = [
+          '.ql-editor[contenteditable="true"]',
+          '[data-qa="block_kit_rich_text_input_element--input"] .ql-editor',
+        ];
+
+        let noteInput = null;
+        for (const selector of noteSelectors) {
+          try {
+            noteInput = await page.waitForSelector(selector, { timeout: 3000 });
+            if (noteInput) {
+              console.log(`✅ 備考入力フィールドを発見: ${selector}`);
+              break;
+            }
+          } catch (e) {
+            console.log(`❌ 備考セレクタ失敗: ${selector}`);
+          }
+        }
+
+        if (noteInput) {
+          await noteInput.fill(note);
+          console.log(`✅ 備考入力完了: ${note}`);
+        }
+      } catch (error) {
+        console.log(`⚠️ 備考入力でエラー: ${error.message}`);
+      }
+    }
+
+    return true;
+  } catch (error) {
+    console.error(`❌ フォーム入力エラー: ${error.message}`);
+    throw error;
+  }
+}
+
+// 送信ボタンをクリックする関数
+async function submitAttendanceForm(page) {
+  try {
+    console.log("📤 勤怠フォームを送信中...");
+
+    // console.log("⚠️ 自動送信は現在無効化されています");
+
+    // // 早期リターン - 実際の送信は行わない
+    // return true;
+
+    const submitSelectors = [
+      'button[data-qa="wizard_modal_next"]',
+      'button:has-text("送信する")',
+      ".c-wizard_modal__next",
+    ];
+
+    let submitButton = null;
+    for (const selector of submitSelectors) {
+      try {
+        submitButton = await page.waitForSelector(selector, { timeout: 3000 });
+        if (submitButton) {
+          console.log(`✅ 送信ボタンを発見: ${selector}`);
+          break;
+        }
+      } catch (e) {
+        console.log(`❌ 送信ボタンセレクタ失敗: ${selector}`);
+      }
+    }
+
+    if (!submitButton) {
+      throw new Error("送信ボタンが見つかりません");
+    }
+
+    await submitButton.click();
+    console.log("✅ 送信ボタンをクリックしました");
+    console.log("⏳ 送信完了を待機中...");
+
+    try {
+      await page.waitForSelector('[data-qa="wizard_modal"]', {
+        state: "hidden",
+        timeout: 10000,
+      });
+      console.log("✅ モーダルが閉じました - 送信成功");
+      return { success: true };
+    } catch (modalError) {
+      // モーダル検知に失敗した場合の代替手段
+      console.log("⚠️ モーダル閉鎖の検知に失敗、代替方法で確認中...");
+
+      // 3秒待機してからエラーメッセージの有無を確認
+      await page.waitForTimeout(3000);
+
+      // エラーメッセージが表示されていないかチェック
+      const hasError = await page
+        .locator("text=エラー")
+        .or(page.locator("text=失敗"))
+        .isVisible()
+        .catch(() => false);
+
+      if (!hasError) {
+        console.log("✅ エラーメッセージなし - 送信成功と判定");
+        return { success: true };
+      }
+    }
+  } catch (error) {
+    console.error(`❌ フォーム送信エラー: ${error.message}`);
+    return { success: false, error: error.message };
+  }
+}
+
+// 出勤WF処理を実行する関数
+async function performStartTimeWorkflow(page, startTime) {
+  try {
+    console.log("🏢 出勤WF処理を開始します");
+
+    // 現在の日付を取得（yyyy/mm/dd形式）
+    const now = new Date();
+    const dateString = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, "0")}/${String(now.getDate()).padStart(2, "0")}`;
+
+    // 勤怠ログボタンをクリック
+    await clickAttendanceLogButton(page);
+
+    // フォームに入力
+    await fillAttendanceForm(page, "出勤", dateString, startTime);
+
+    // 送信
+    await submitAttendanceForm(page);
+
+    console.log("✅ 出勤WF処理が完了しました");
+    return true;
+  } catch (error) {
+    console.error(`❌ 出勤WF処理でエラー: ${error.message}`);
+    throw error;
+  }
+}
+
+// 退勤WF処理を実行する関数
+async function performEndTimeWorkflow(page, endTime) {
+  try {
+    console.log("🏠 退勤WF処理を開始します");
+
+    // 現在の日付を取得（yyyy/mm/dd形式）
+    const now = new Date();
+    const dateString = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, "0")}/${String(now.getDate()).padStart(2, "0")}`;
+
+    // 勤怠ログボタンをクリック
+    await clickAttendanceLogButton(page);
+
+    // フォームに入力
+    await fillAttendanceForm(page, "退勤", dateString, endTime);
+
+    // 送信
+    await submitAttendanceForm(page);
+
+    console.log("✅ 退勤WF処理が完了しました");
+    return true;
+  } catch (error) {
+    console.error(`❌ 退勤WF処理でエラー: ${error.message}`);
+    throw error;
+  }
+}
+
 module.exports = {
   signInToWorkspace,
   signInWithGoogle,
   navigateToChannel,
-  sendStartWorkMessage,
-  sendEndWorkMessage,
+  performStartTimeWorkflow,
+  performEndTimeWorkflow,
 };
