@@ -20,8 +20,8 @@ const {
   signInToWorkspace,
   signInWithGoogle,
   navigateToChannel,
-  sendStartWorkMessage,
-  sendEndWorkMessage,
+  performStartTimeWorkflow,
+  performEndTimeWorkflow,
 } = require("./slack.cjs");
 
 // プロセス管理用のPIDファイル
@@ -257,7 +257,8 @@ async function openSlackWF(mode = "both") {
     slowMo: 100,
   });
 
-  const page = await browser.newPage();
+  const context = await browser.newContext();
+  const page = await context.newPage();
 
   page.on("dialog", async (dialog) => {
     console.log(`ダイアログタイプ: ${dialog.type()}`);
@@ -295,6 +296,8 @@ async function openSlackWF(mode = "both") {
     const startTime = process.env.SLACKWF_START_TIME || "09:00";
     const endTime = process.env.SLACKWF_END_TIME || "18:00";
 
+    console.log("ここまできた");
+
     await executeSlackWFAction(slackPage, mode, startTime, endTime);
 
     // ページイベントリスナーを設定
@@ -311,31 +314,34 @@ async function openSlackWF(mode = "both") {
 }
 
 async function executeSlackWFAction(page, mode, startTime, endTime) {
-  console.log(`🔄 SlackWFメッセージ送信開始: ${mode}`);
+  console.log(`🔄 SlackWF処理開始: ${mode}`);
 
   try {
     switch (mode) {
       case "start":
-        console.log("🏢 出勤メッセージのみ送信");
-        await sendStartWorkMessage(page, startTime);
+        console.log("🏢 出勤WF処理のみ実行");
+        await performStartTimeWorkflow(page, startTime);
         break;
 
       case "end":
-        console.log("🏠 退勤メッセージのみ送信");
-        await sendEndWorkMessage(page, endTime);
+        console.log("🏠 退勤WF処理のみ実行");
+        await performEndTimeWorkflow(page, endTime);
         break;
 
       case "both":
-        console.log("🏢🏠 出勤・退勤メッセージを送信");
-        await sendStartWorkMessage(page, startTime);
-        await page.waitForTimeout(2000);
-        await sendEndWorkMessage(page, endTime);
+        console.log("🏢🏠 出勤・退勤WF処理を実行");
+        await performStartTimeWorkflow(page, startTime);
+
+        // 出勤処理完了後、少し待機してから退勤処理
+        await page.waitForTimeout(3000);
+
+        await performEndTimeWorkflow(page, endTime);
         break;
     }
 
-    console.log(`✅ SlackWFメッセージ送信完了: ${mode}`);
+    console.log(`✅ SlackWF処理完了: ${mode}`);
   } catch (error) {
-    console.error(`❌ SlackWFメッセージ送信エラー (${mode}):`, error.message);
+    console.error(`❌ SlackWF処理エラー (${mode}):`, error.message);
     throw error;
   }
 }

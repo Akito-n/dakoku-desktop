@@ -58,14 +58,54 @@ function App() {
     }
   };
 
-  const handleSlackWFTest = async () => {
+  const handleSlackWFCheckIn = async () => {
     try {
-      setLoading("slackwf");
-      await window.electronAPI.slackwf.execute("check-both");
-      console.log("SlackWF メッセージ送信完了");
-      showToast("SlackWF メッセージを送信しました", Intent.SUCCESS, "tick");
+      setLoading("slackwf-in");
+      await window.electronAPI.slackwf.execute("check-in");
+      console.log("SlackWF 出勤処理完了");
+      showToast("SlackWF 出勤処理を実行しました", Intent.SUCCESS, "tick");
     } catch (error) {
-      console.error("SlackWF Error:", error);
+      console.error("SlackWF 出勤 Error:", error);
+      showToast(
+        error instanceof Error
+          ? error.message
+          : "SlackWF出勤処理に失敗しました",
+        Intent.DANGER,
+        "error",
+      );
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  const handleSlackWFCheckOut = async () => {
+    try {
+      setLoading("slackwf-out");
+      await window.electronAPI.slackwf.execute("check-out");
+      console.log("SlackWF 退勤処理完了");
+      showToast("SlackWF 退勤処理を実行しました", Intent.SUCCESS, "tick");
+    } catch (error) {
+      console.error("SlackWF 退勤 Error:", error);
+      showToast(
+        error instanceof Error
+          ? error.message
+          : "SlackWF退勤処理に失敗しました",
+        Intent.DANGER,
+        "error",
+      );
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  const handleSlackWFCheckBoth = async () => {
+    try {
+      setLoading("slackwf-both");
+      await window.electronAPI.slackwf.execute("check-both");
+      console.log("SlackWF 出退勤処理完了");
+      showToast("SlackWF 出退勤処理を実行しました", Intent.SUCCESS, "tick");
+    } catch (error) {
+      console.error("SlackWF 両方 Error:", error);
       showToast(
         error instanceof Error ? error.message : "SlackWF処理に失敗しました",
         Intent.DANGER,
@@ -76,7 +116,6 @@ function App() {
     }
   };
 
-  // ページコンテンツのレンダリング
   const renderPageContent = () => {
     switch (currentPage) {
       case "settings":
@@ -152,19 +191,58 @@ function App() {
 
               <Divider style={{ margin: "30px 0" }} />
 
-              {/* その他のアクション */}
-              <ButtonGroup style={{ marginBottom: "20px" }}>
-                <Button
-                  intent={Intent.NONE}
-                  onClick={handleSlackWFTest}
-                  icon="chat"
-                  large
-                  style={{ height: "50px", fontSize: "14px" }}
-                >
-                  SlackWF を起動
-                </Button>
-              </ButtonGroup>
+              <div style={{ marginBottom: "30px" }}>
+                <ButtonGroup large vertical style={{ minWidth: "320px" }}>
+                  <Button
+                    intent={Intent.NONE}
+                    onClick={handleSlackWFCheckBoth}
+                    icon="chat"
+                    large
+                    loading={loading === "slackwf-both"}
+                    style={{
+                      height: "65px",
+                      fontSize: "16px",
+                      fontWeight: "600",
+                    }}
+                  >
+                    {loading === "slackwf-both"
+                      ? "SlackWF実行中..."
+                      : "SlackWF 出退勤"}
+                  </Button>
 
+                  {/* サブオプション：個別処理 */}
+                  <div style={{ marginTop: "12px" }}>
+                    <ButtonGroup fill style={{ display: "flex", gap: "2px" }}>
+                      <Button
+                        intent={Intent.PRIMARY}
+                        onClick={handleSlackWFCheckIn}
+                        icon="log-in"
+                        loading={loading === "slackwf-in"}
+                        style={{
+                          flex: 1,
+                          height: "45px",
+                          fontSize: "14px",
+                        }}
+                      >
+                        {loading === "slackwf-in" ? "実行中..." : "出勤"}
+                      </Button>
+                      <Button
+                        intent={Intent.PRIMARY}
+                        onClick={handleSlackWFCheckOut}
+                        icon="log-out"
+                        loading={loading === "slackwf-out"}
+                        style={{
+                          flex: 1,
+                          height: "45px",
+                          fontSize: "14px",
+                        }}
+                      >
+                        {loading === "slackwf-out" ? "実行中..." : "退勤"}
+                      </Button>
+                    </ButtonGroup>
+                  </div>
+                </ButtonGroup>
+              </div>
               <Divider style={{ margin: "20px 0" }} />
 
               {/* 設定ボタン */}
