@@ -1,8 +1,8 @@
 import { useState } from "react";
-import SettingsPage from "./features/settings/components/SettingsPage";
 import { HomePage } from "./pages/home";
 import { Header } from "./features/common/components/Header";
 import type { PageName } from "./features/common/types/header";
+import SettingsPage from "./pages/settings";
 
 function App() {
   const [currentPage, setCurrentPage] = useState<PageName>("home");
