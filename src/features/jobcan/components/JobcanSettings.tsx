@@ -44,7 +44,7 @@ export const JobcanSettings: React.FC = () => {
     };
 
     loadJobcanConfig();
-  }, [showError]);
+  }, []);
 
   const handleSaveCredentials = async (e: React.FormEvent) => {
     e.preventDefault();

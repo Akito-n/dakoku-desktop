@@ -48,7 +48,7 @@ export const SlackWFSettings: React.FC = () => {
     };
 
     loadSlackWFConfig();
-  }, [showError]);
+  }, []);
 
   const handleSaveCredentials = async (e: React.FormEvent) => {
     e.preventDefault();

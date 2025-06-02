@@ -1,28 +1,7 @@
 const { chromium } = require("playwright");
 const { BrowserManager } = require("./browser-manager.cjs");
-
-// 各サービスのハンドラーをインポート（後で作成予定）
 const { JobcanService } = require("../jobcan/jobcan-service.cjs");
 const { SlackWFService } = require("../slackwf/slackwf-service.cjs");
-console.log("🔍 playwright-runner.cjs 開始");
-
-try {
-  console.log("🔍 BrowserManager をインポート中...");
-  const { BrowserManager } = require("./browser-manager.cjs");
-  console.log("✅ BrowserManager インポート成功");
-
-  console.log("🔍 JobcanService をインポート中...");
-  const { JobcanService } = require("../jobcan/jobcan-service.cjs");
-  console.log("✅ JobcanService インポート成功");
-
-  console.log("🔍 SlackWFService をインポート中...");
-  const { SlackWFService } = require("../slackwf/slackwf-service.cjs");
-  console.log("✅ SlackWFService インポート成功");
-} catch (error) {
-  console.error("❌ モジュールインポートエラー:", error.message);
-  console.error(error.stack);
-  process.exit(1);
-}
 
 class PlaywrightRunner {
   constructor() {
@@ -44,7 +23,6 @@ class PlaywrightRunner {
 
       this.browserManager.setupBrowserMonitoring(browser, page);
 
-      // 実際の処理を実行
       await jobcanService.execute(mode);
 
       await new Promise(() => {});
