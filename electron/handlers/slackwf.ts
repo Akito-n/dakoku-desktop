@@ -46,6 +46,7 @@ export const slackwfHandlers = {
       const scriptPath = path.join(
         process.cwd(),
         "scripts",
+        "core",
         "playwright-runner.cjs",
       );
 

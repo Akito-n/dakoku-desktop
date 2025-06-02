@@ -14,7 +14,7 @@ export const JobcanSection: React.FC = () => {
   const [loading, setLoading] = useState<JobcanLoadingState>(null);
 
   const showToast = (message: string, intent: Intent, icon: IconName) => {
-    OverlayToaster.create({ position: "top" }).show({
+    OverlayToaster.create({ position: "bottom" }).show({
       message,
       intent,
       icon,
