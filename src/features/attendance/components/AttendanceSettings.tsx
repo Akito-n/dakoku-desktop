@@ -32,7 +32,7 @@ export const AttendanceSettings: React.FC = () => {
     };
 
     loadAttendanceConfig();
-  }, [showError]);
+  }, []);
 
   const handleSaveAttendance = async (e: React.FormEvent) => {
     e.preventDefault();

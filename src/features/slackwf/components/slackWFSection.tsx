@@ -6,7 +6,7 @@ import {
   OverlayToaster,
   type IconName,
 } from "@blueprintjs/core";
-import { ActionButton } from "../../../components/button/";
+import { ActionButton } from "../../../components/button";
 import type { SlackWFActionType } from "../types/slackWf";
 import { SLACKWF_ACTIONS } from "../types/slackWf";
 
@@ -14,7 +14,7 @@ export const SlackWFSection: React.FC = () => {
   const [loading, setLoading] = useState<string | null>(null);
 
   const showToast = (message: string, intent: Intent, icon: IconName) => {
-    OverlayToaster.create({ position: "top" }).show({
+    OverlayToaster.create({ position: "bottom" }).show({
       message,
       intent,
       icon,

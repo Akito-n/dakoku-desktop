@@ -40,6 +40,7 @@ export const playwrightHandlers = {
       const scriptPath = path.join(
         process.cwd(),
         "scripts",
+        "core",
         "playwright-runner.cjs",
       );
 
