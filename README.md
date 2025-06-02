@@ -1,30 +1,68 @@
-# React + TypeScript + Vite
+# Dakoku Desktop
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+勤怠管理を自動化するElectronアプリケーション。JobcanとSlackの勤怠ログを自動送信します。
 
-Currently, two official plugins are available:
+## 機能
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Jobcan自動打刻**: 出勤・退勤時刻を自動で打刻
+- **SlackWF勤怠ログ**: Slackワークフローで勤怠ログを自動送信
+- **設定管理**: 認証情報と勤務時間の管理
 
-## Expanding the ESLint configuration
+## 必要な環境
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+- **Jobcanアカウント**: 打刻修正権限が必要
+- **Slackワークスペース**: Google認証でアクセス可能
+- **勤怠ログワークフロー**: Slack側で設定済みであること
 
-- Configure the top-level `parserOptions` property like this:
+## インストール・起動
 
-```js
-export default {
-  // other rules...
-  parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
-    project: ['./tsconfig.json', './tsconfig.node.json'],
-    tsconfigRootDir: __dirname,
-  },
-}
+### 開発環境
+```bash
+npm install
+npm run dev
 ```
 
-- Replace `plugin:@typescript-eslint/recommended` to `plugin:@typescript-eslint/recommended-type-checked` or `plugin:@typescript-eslint/strict-type-checked`
-- Optionally add `plugin:@typescript-eslint/stylistic-type-checked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and add `plugin:react/recommended` & `plugin:react/jsx-runtime` to the `extends` list
+### 本番ビルド
+```bash
+npm run build
+```
+
+## 初回設定
+
+### 1. 勤務時間設定
+- 設定画面で出勤・退勤時刻を設定（例: 09:00、18:00）
+
+### 2. Jobcan設定
+- **URL**: Jobcanログインページ（通常はデフォルトのまま）
+- **メールアドレス**: Jobcanログイン用
+- **パスワード**: Jobcanログイン用
+
+### 3. SlackWF設定
+- **ワークスペース名**: Slackワークスペース名
+- **Googleメール**: Slack認証用Googleアカウント
+- **Googleパスワード**: 同上
+- **チャンネルURL**: 勤怠ログ送信先チャンネル（オプション）
+
+## 使用方法
+
+1. **設定完了後**、ホーム画面でボタンをクリック
+2. **ブラウザが自動起動**し、処理を実行
+3. **処理完了後**はブラウザを閉じるかそのまま放置
+4. **エラー時**はトースト通知で原因を確認
+
+## 注意事項
+
+- **認証情報はローカルに保存**されます
+- **ブラウザは15分で自動終了**します
+- **2段階認証**が有効な場合は手動操作が必要な場合があります
+- **VPN接続**など、ネットワーク環境によっては動作しない場合があります
+
+## トラブルシューティング
+
+### よくある問題
+- **ログイン失敗**: 認証情報を再確認
+- **要素が見つからない**: サイトの仕様変更の可能性
+- **タイムアウト**: ネットワーク環境を確認
+
+### ログ確認
+アプリケーションコンソールでPlaywright実行ログを確認できます。
