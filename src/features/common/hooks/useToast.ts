@@ -5,6 +5,8 @@ export const useToast = () => {
     OverlayToaster.create({
       position: "top-right",
       maxToasts: 3,
+      canEscapeKeyClear: true,
+      className: "custom-toaster",
     }).show({
       message,
       intent,

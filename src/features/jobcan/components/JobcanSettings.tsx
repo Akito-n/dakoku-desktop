@@ -13,111 +13,128 @@ import {
   Spinner,
 } from "@blueprintjs/core";
 import { useToast } from "../../common/hooks/useToast";
-
-interface JobcanConfig {
-  email: string;
-  password: string;
-  url: string;
-  isConfigured: boolean;
-}
+import {
+  useJobcanConfig,
+  useUpdateJobcanCredentials,
+  useUpdateJobcanUrl,
+  useClearJobcanConfig,
+  useTestJobcanConfig,
+} from "../hooks/useJobcanQuery";
 
 export const JobcanSettings: React.FC = () => {
-  const [jobcanConfig, setJobcanConfig] = useState<JobcanConfig>({
+  const {
+    data: jobcanConfig,
+    isLoading: isLoadingConfig,
+    error: loadError,
+  } = useJobcanConfig();
+
+  const updateCredentialsMutation = useUpdateJobcanCredentials();
+  const updateUrlMutation = useUpdateJobcanUrl();
+  const clearConfigMutation = useClearJobcanConfig();
+  const testConfigMutation = useTestJobcanConfig();
+
+  const [formData, setFormData] = useState({
     email: "",
     password: "",
     url: "",
-    isConfigured: false,
   });
-  const [loading, setLoading] = useState(false);
+
   const { showSuccess, showError, showWarning } = useToast();
 
-  // 初期データ読み込み
   useEffect(() => {
-    const loadJobcanConfig = async () => {
-      try {
-        const config = await window.electronAPI.config.getJobcan();
-        setJobcanConfig(config);
-      } catch (error) {
-        console.error("Jobcan設定の読み込みに失敗:", error);
-        showError("Jobcan設定の読み込みに失敗しました");
-      }
-    };
-
-    loadJobcanConfig();
-  }, []);
+    if (jobcanConfig) {
+      setFormData({
+        email: jobcanConfig.email,
+        password: jobcanConfig.password,
+        url: jobcanConfig.url,
+      });
+    }
+  }, [jobcanConfig]);
 
   const handleSaveCredentials = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
 
     try {
-      const result = await window.electronAPI.config.setJobcanCredentials(
-        jobcanConfig.email,
-        jobcanConfig.password,
-      );
-
-      setJobcanConfig((prev) => ({ ...prev, ...result }));
+      await updateCredentialsMutation.mutateAsync({
+        email: formData.email,
+        password: formData.password,
+      });
       showSuccess("Jobcan認証情報を保存しました");
     } catch (error) {
       console.error("保存エラー:", error);
       showError(
         error instanceof Error ? error.message : "認証情報の保存に失敗しました",
       );
-    } finally {
-      setLoading(false);
     }
   };
 
   const handleSaveUrl = async () => {
-    setLoading(true);
-
     try {
-      await window.electronAPI.config.setJobcanUrl(jobcanConfig.url);
+      await updateUrlMutation.mutateAsync(formData.url);
       showSuccess("JobcanのURLを保存しました");
     } catch (error) {
       console.error("URL保存エラー:", error);
       showError(
         error instanceof Error ? error.message : "URLの保存に失敗しました",
       );
-    } finally {
-      setLoading(false);
     }
   };
 
   const handleClearConfig = async () => {
-    setLoading(true);
-
     try {
-      const result = await window.electronAPI.config.clearJobcan();
-      setJobcanConfig((prev) => ({ ...prev, ...result, isConfigured: false }));
+      await clearConfigMutation.mutateAsync();
       showWarning("Jobcanの設定をクリアしました");
     } catch (error) {
       console.error("クリアエラー:", error);
       showError("設定のクリアに失敗しました");
-    } finally {
-      setLoading(false);
     }
   };
 
   const handleTestConfig = async () => {
-    setLoading(true);
-
     try {
-      const result = await window.electronAPI.config.testJobcan();
+      const result = await testConfigMutation.mutateAsync();
       showSuccess(result.message);
     } catch (error) {
       console.error("テストエラー:", error);
       showError(
         error instanceof Error ? error.message : "テストに失敗しました",
       );
-    } finally {
-      setLoading(false);
     }
   };
 
+  if (loadError) {
+    return (
+      <Card elevation={2} style={{ marginBottom: "20px" }}>
+        <div style={{ textAlign: "center", padding: "20px", color: "#cd5c5c" }}>
+          <Icon icon="error" size={24} style={{ marginBottom: "10px" }} />
+          <div>Jobcan設定の読み込みに失敗しました</div>
+          <div style={{ fontSize: "14px", marginTop: "5px" }}>
+            {loadError instanceof Error ? loadError.message : "不明なエラー"}
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  if (isLoadingConfig) {
+    return (
+      <Card elevation={2} style={{ marginBottom: "20px" }}>
+        <div style={{ textAlign: "center", padding: "40px" }}>
+          <Spinner size={30} />
+          <div style={{ marginTop: "10px" }}>Jobcan設定を読み込み中...</div>
+        </div>
+      </Card>
+    );
+  }
+
+  const isLoading =
+    updateCredentialsMutation.isPending ||
+    updateUrlMutation.isPending ||
+    clearConfigMutation.isPending ||
+    testConfigMutation.isPending;
+
   return (
     <Card elevation={2} style={{ marginBottom: "20px" }}>
-      {/* Jobcan設定ヘッダー */}
       <div
         style={{
           display: "flex",
@@ -138,22 +155,21 @@ export const JobcanSettings: React.FC = () => {
           Jobcan 設定
         </H2>
         <Tag
-          intent={jobcanConfig.isConfigured ? Intent.SUCCESS : Intent.NONE}
-          icon={jobcanConfig.isConfigured ? "tick" : "cross"}
+          intent={jobcanConfig?.isConfigured ? Intent.SUCCESS : Intent.NONE}
+          icon={jobcanConfig?.isConfigured ? "tick" : "cross"}
           large
         />
       </div>
 
-      {/* URL設定 */}
       <FormGroup
         label="Jobcan URL"
         helperText="JobcanのログインページURLを指定してください"
       >
         <div style={{ display: "flex", gap: "10px" }}>
           <InputGroup
-            value={jobcanConfig.url}
+            value={formData.url}
             onChange={(e) =>
-              setJobcanConfig((prev) => ({ ...prev, url: e.target.value }))
+              setFormData((prev) => ({ ...prev, url: e.target.value }))
             }
             placeholder="https://id.jobcan.jp/users/sign_in"
             leftIcon="link"
@@ -162,7 +178,7 @@ export const JobcanSettings: React.FC = () => {
           <Button
             intent={Intent.PRIMARY}
             onClick={handleSaveUrl}
-            disabled={loading || !jobcanConfig.url}
+            disabled={isLoading || !formData.url}
             icon="floppy-disk"
           >
             保存
@@ -172,7 +188,6 @@ export const JobcanSettings: React.FC = () => {
 
       <Divider style={{ margin: "20px 0" }} />
 
-      {/* 認証情報設定 */}
       <form onSubmit={handleSaveCredentials}>
         <FormGroup
           label="メールアドレス"
@@ -182,9 +197,9 @@ export const JobcanSettings: React.FC = () => {
           <InputGroup
             id="email-input"
             type="email"
-            value={jobcanConfig.email}
+            value={formData.email}
             onChange={(e) =>
-              setJobcanConfig((prev) => ({ ...prev, email: e.target.value }))
+              setFormData((prev) => ({ ...prev, email: e.target.value }))
             }
             placeholder="your-email@example.com"
             leftIcon="envelope"
@@ -200,9 +215,9 @@ export const JobcanSettings: React.FC = () => {
           <InputGroup
             id="password-input"
             type="password"
-            value={jobcanConfig.password}
+            value={formData.password}
             onChange={(e) =>
-              setJobcanConfig((prev) => ({
+              setFormData((prev) => ({
                 ...prev,
                 password: e.target.value,
               }))
@@ -218,20 +233,26 @@ export const JobcanSettings: React.FC = () => {
             <Button
               type="submit"
               intent={Intent.PRIMARY}
-              disabled={
-                loading || !jobcanConfig.email || !jobcanConfig.password
+              disabled={isLoading || !formData.email || !formData.password}
+              icon={
+                updateCredentialsMutation.isPending ? (
+                  <Spinner size={16} />
+                ) : (
+                  "floppy-disk"
+                )
               }
-              icon={loading ? <Spinner size={16} /> : "floppy-disk"}
               large
               style={{ flexGrow: 2 }}
             >
-              {loading ? "保存中..." : "認証情報を保存"}
+              {updateCredentialsMutation.isPending
+                ? "保存中..."
+                : "認証情報を保存"}
             </Button>
 
-            {jobcanConfig.isConfigured && (
+            {jobcanConfig?.isConfigured && (
               <Button
                 onClick={handleTestConfig}
-                disabled={loading}
+                disabled={isLoading}
                 intent={Intent.SUCCESS}
                 icon="play"
                 large
@@ -240,10 +261,10 @@ export const JobcanSettings: React.FC = () => {
               </Button>
             )}
 
-            {jobcanConfig.isConfigured && (
+            {jobcanConfig?.isConfigured && (
               <Button
                 onClick={handleClearConfig}
-                disabled={loading}
+                disabled={isLoading}
                 intent={Intent.DANGER}
                 icon="trash"
                 large

@@ -13,90 +13,83 @@ import {
   Spinner,
 } from "@blueprintjs/core";
 import { useToast } from "../../common/hooks/useToast";
-
-interface SlackWFConfig {
-  workspaceName: string;
-  googleEmail: string;
-  googlePassword: string;
-  targetChannelUrl: string;
-  url: string;
-  isConfigured: boolean;
-}
+import {
+  useSlackWFConfig,
+  useUpdateSlackWFCredentials,
+  useUpdateSlackWFUrl,
+  useUpdateSlackWFChannel,
+  useClearSlackWFConfig,
+  useTestSlackWFConfig,
+} from "../hooks/useSlackWFQuery";
 
 export const SlackWFSettings: React.FC = () => {
-  const [slackwfConfig, setSlackwfConfig] = useState<SlackWFConfig>({
+  const {
+    data: slackwfConfig,
+    isLoading: isLoadingConfig,
+    error: loadError,
+  } = useSlackWFConfig();
+
+  const updateCredentialsMutation = useUpdateSlackWFCredentials();
+  const updateUrlMutation = useUpdateSlackWFUrl();
+  const updateChannelMutation = useUpdateSlackWFChannel();
+  const clearConfigMutation = useClearSlackWFConfig();
+  const testConfigMutation = useTestSlackWFConfig();
+
+  const [formData, setFormData] = useState({
     workspaceName: "",
     googleEmail: "",
     googlePassword: "",
     targetChannelUrl: "",
     url: "",
-    isConfigured: false,
   });
-  const [loading, setLoading] = useState(false);
+
   const { showSuccess, showError, showWarning } = useToast();
 
-  // 初期データ読み込み
   useEffect(() => {
-    const loadSlackWFConfig = async () => {
-      try {
-        const config = await window.electronAPI.config.getSlackWF();
-        setSlackwfConfig(config);
-      } catch (error) {
-        console.error("SlackWF設定の読み込みに失敗:", error);
-        showError("SlackWF設定の読み込みに失敗しました");
-      }
-    };
-
-    loadSlackWFConfig();
-  }, []);
+    if (slackwfConfig) {
+      setFormData({
+        workspaceName: slackwfConfig.workspaceName,
+        googleEmail: slackwfConfig.googleEmail,
+        googlePassword: slackwfConfig.googlePassword,
+        targetChannelUrl: slackwfConfig.targetChannelUrl,
+        url: slackwfConfig.url,
+      });
+    }
+  }, [slackwfConfig]);
 
   const handleSaveCredentials = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
 
     try {
-      const result = await window.electronAPI.config.setSlackWFCredentials(
-        slackwfConfig.workspaceName,
-        slackwfConfig.googleEmail,
-        slackwfConfig.googlePassword,
-      );
-
-      setSlackwfConfig((prev) => ({ ...prev, ...result }));
+      await updateCredentialsMutation.mutateAsync({
+        workspaceName: formData.workspaceName,
+        googleEmail: formData.googleEmail,
+        googlePassword: formData.googlePassword,
+      });
       showSuccess("SlackWF認証情報を保存しました");
     } catch (error) {
       console.error("SlackWF保存エラー:", error);
       showError(
         error instanceof Error ? error.message : "認証情報の保存に失敗しました",
       );
-    } finally {
-      setLoading(false);
     }
   };
 
   const handleSaveUrl = async () => {
-    setLoading(true);
-
     try {
-      await window.electronAPI.config.setSlackWFUrl(slackwfConfig.url);
+      await updateUrlMutation.mutateAsync(formData.url);
       showSuccess("SlackWFのURLを保存しました");
     } catch (error) {
       console.error("SlackWF URL保存エラー:", error);
       showError(
         error instanceof Error ? error.message : "URLの保存に失敗しました",
       );
-    } finally {
-      setLoading(false);
     }
   };
 
   const handleSaveChannel = async () => {
-    setLoading(true);
-
     try {
-      const result = await window.electronAPI.config.setSlackWFChannel(
-        slackwfConfig.targetChannelUrl,
-      );
-      setSlackwfConfig((prev) => ({ ...prev, ...result }));
+      await updateChannelMutation.mutateAsync(formData.targetChannelUrl);
       showSuccess("SlackWFチャンネルURLを保存しました");
     } catch (error) {
       console.error("SlackWFチャンネル保存エラー:", error);
@@ -105,41 +98,62 @@ export const SlackWFSettings: React.FC = () => {
           ? error.message
           : "チャンネルURLの保存に失敗しました",
       );
-    } finally {
-      setLoading(false);
     }
   };
 
   const handleClearConfig = async () => {
-    setLoading(true);
-
     try {
-      const result = await window.electronAPI.config.clearSlackWF();
-      setSlackwfConfig((prev) => ({ ...prev, ...result, isConfigured: false }));
+      await clearConfigMutation.mutateAsync();
       showWarning("SlackWFの設定をクリアしました");
     } catch (error) {
       console.error("SlackWFクリアエラー:", error);
       showError("設定のクリアに失敗しました");
-    } finally {
-      setLoading(false);
     }
   };
 
   const handleTestConfig = async () => {
-    setLoading(true);
-
     try {
-      const result = await window.electronAPI.config.testSlackWF();
+      const result = await testConfigMutation.mutateAsync();
       showSuccess(result.message);
     } catch (error) {
       console.error("SlackWFテストエラー:", error);
       showError(
         error instanceof Error ? error.message : "テストに失敗しました",
       );
-    } finally {
-      setLoading(false);
     }
   };
+
+  if (loadError) {
+    return (
+      <Card elevation={2} style={{ marginBottom: "20px" }}>
+        <div style={{ textAlign: "center", padding: "20px", color: "#cd5c5c" }}>
+          <Icon icon="error" size={24} style={{ marginBottom: "10px" }} />
+          <div>SlackWF設定の読み込みに失敗しました</div>
+          <div style={{ fontSize: "14px", marginTop: "5px" }}>
+            {loadError instanceof Error ? loadError.message : "不明なエラー"}
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  if (isLoadingConfig) {
+    return (
+      <Card elevation={2} style={{ marginBottom: "20px" }}>
+        <div style={{ textAlign: "center", padding: "40px" }}>
+          <Spinner size={30} />
+          <div style={{ marginTop: "10px" }}>SlackWF設定を読み込み中...</div>
+        </div>
+      </Card>
+    );
+  }
+
+  const isLoading =
+    updateCredentialsMutation.isPending ||
+    updateUrlMutation.isPending ||
+    updateChannelMutation.isPending ||
+    clearConfigMutation.isPending ||
+    testConfigMutation.isPending;
 
   return (
     <Card elevation={2} style={{ marginBottom: "20px" }}>
@@ -163,22 +177,21 @@ export const SlackWFSettings: React.FC = () => {
           SlackWF 設定
         </H2>
         <Tag
-          intent={slackwfConfig.isConfigured ? Intent.SUCCESS : Intent.NONE}
-          icon={slackwfConfig.isConfigured ? "tick" : "cross"}
+          intent={slackwfConfig?.isConfigured ? Intent.SUCCESS : Intent.NONE}
+          icon={slackwfConfig?.isConfigured ? "tick" : "cross"}
           large
         />
       </div>
 
-      {/* URL設定 */}
       <FormGroup
         label="SlackWF URL"
         helperText="SlackワークスペースのサインインページURLを指定してください"
       >
         <div style={{ display: "flex", gap: "10px" }}>
           <InputGroup
-            value={slackwfConfig.url}
+            value={formData.url}
             onChange={(e) =>
-              setSlackwfConfig((prev) => ({ ...prev, url: e.target.value }))
+              setFormData((prev) => ({ ...prev, url: e.target.value }))
             }
             placeholder="https://slack.com/intl/ja-jp/workspace-signin"
             leftIcon="link"
@@ -187,7 +200,7 @@ export const SlackWFSettings: React.FC = () => {
           <Button
             intent={Intent.PRIMARY}
             onClick={handleSaveUrl}
-            disabled={loading || !slackwfConfig.url}
+            disabled={isLoading || !formData.url}
             icon="floppy-disk"
           >
             保存
@@ -197,7 +210,6 @@ export const SlackWFSettings: React.FC = () => {
 
       <Divider style={{ margin: "20px 0" }} />
 
-      {/* 認証情報設定 */}
       <form onSubmit={handleSaveCredentials}>
         <FormGroup
           label="ワークスペース名"
@@ -207,9 +219,9 @@ export const SlackWFSettings: React.FC = () => {
           <InputGroup
             id="workspace-input"
             type="text"
-            value={slackwfConfig.workspaceName}
+            value={formData.workspaceName}
             onChange={(e) =>
-              setSlackwfConfig((prev) => ({
+              setFormData((prev) => ({
                 ...prev,
                 workspaceName: e.target.value,
               }))
@@ -228,9 +240,9 @@ export const SlackWFSettings: React.FC = () => {
           <InputGroup
             id="google-email-input"
             type="email"
-            value={slackwfConfig.googleEmail}
+            value={formData.googleEmail}
             onChange={(e) =>
-              setSlackwfConfig((prev) => ({
+              setFormData((prev) => ({
                 ...prev,
                 googleEmail: e.target.value,
               }))
@@ -249,9 +261,9 @@ export const SlackWFSettings: React.FC = () => {
           <InputGroup
             id="google-password-input"
             type="password"
-            value={slackwfConfig.googlePassword}
+            value={formData.googlePassword}
             onChange={(e) =>
-              setSlackwfConfig((prev) => ({
+              setFormData((prev) => ({
                 ...prev,
                 googlePassword: e.target.value,
               }))
@@ -271,9 +283,9 @@ export const SlackWFSettings: React.FC = () => {
             <InputGroup
               id="channel-url-input"
               type="url"
-              value={slackwfConfig.targetChannelUrl}
+              value={formData.targetChannelUrl}
               onChange={(e) =>
-                setSlackwfConfig((prev) => ({
+                setFormData((prev) => ({
                   ...prev,
                   targetChannelUrl: e.target.value,
                 }))
@@ -284,7 +296,7 @@ export const SlackWFSettings: React.FC = () => {
             />
             <Button
               onClick={handleSaveChannel}
-              disabled={loading || !slackwfConfig.targetChannelUrl}
+              disabled={isLoading || !formData.targetChannelUrl}
               icon="floppy-disk"
             >
               保存
@@ -298,22 +310,30 @@ export const SlackWFSettings: React.FC = () => {
               type="submit"
               intent={Intent.PRIMARY}
               disabled={
-                loading ||
-                !slackwfConfig.workspaceName ||
-                !slackwfConfig.googleEmail ||
-                !slackwfConfig.googlePassword
+                isLoading ||
+                !formData.workspaceName ||
+                !formData.googleEmail ||
+                !formData.googlePassword
               }
-              icon={loading ? <Spinner size={16} /> : "floppy-disk"}
+              icon={
+                updateCredentialsMutation.isPending ? (
+                  <Spinner size={16} />
+                ) : (
+                  "floppy-disk"
+                )
+              }
               large
               style={{ flexGrow: 2 }}
             >
-              {loading ? "保存中..." : "認証情報を保存"}
+              {updateCredentialsMutation.isPending
+                ? "保存中..."
+                : "認証情報を保存"}
             </Button>
 
-            {slackwfConfig.isConfigured && (
+            {slackwfConfig?.isConfigured && (
               <Button
                 onClick={handleTestConfig}
-                disabled={loading}
+                disabled={isLoading}
                 intent={Intent.SUCCESS}
                 icon="play"
                 large
@@ -322,10 +342,10 @@ export const SlackWFSettings: React.FC = () => {
               </Button>
             )}
 
-            {slackwfConfig.isConfigured && (
+            {slackwfConfig?.isConfigured && (
               <Button
                 onClick={handleClearConfig}
-                disabled={loading}
+                disabled={isLoading}
                 intent={Intent.DANGER}
                 icon="trash"
                 large
