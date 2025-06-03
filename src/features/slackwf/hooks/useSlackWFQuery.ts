@@ -73,7 +73,7 @@ export const useUpdateSlackWFUrl = () => {
       const result = await window.electronAPI.config.setSlackWFUrl(url);
       return result;
     },
-    onSuccess: (data, url) => {
+    onSuccess: (_data, url) => {
       queryClient.setQueryData(
         slackwfQueryKeys.config(),
         (old: SlackWFConfig | undefined) => (old ? { ...old, url } : undefined),
