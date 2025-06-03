@@ -2,7 +2,8 @@
   "name": "timeclock-app",
   "author": "Akto-n",
   "private": true,
-  "version": "1.0.2",
+  "publish": null,
+  "version": "1.0.3",
   "type": "module",
   "build": {
     "appId": "com.akto-n.timeclock",
