@@ -24,17 +24,6 @@
     "directories": {
       "output": "dist"
     },
-    "linux": {
-      "target": [
-        {
-          "target": "AppImage",
-          "arch": [
-            "x64",
-            "arm64"
-          ]
-        }
-      ]
-    },
     "mac": {
       "target": [
         {
