@@ -112,7 +112,8 @@ jobs:
             ### 変更内容
             詳細はCHANGELOG.mdをご確認ください。
           files: |
-            ./release-artifacts/**/*
+            ./release-artifacts/**/*.dmg
+            ./release-artifacts/**/*.exe
           draft: false
           prerelease: false
         env:
