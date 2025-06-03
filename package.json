@@ -2,12 +2,12 @@
   "name": "timeclock-app",
   "author": "Akto-n",
   "private": true,
-  "publish": null,
-  "version": "1.0.3",
+  "version": "1.0.4",
   "type": "module",
   "build": {
     "appId": "com.akto-n.timeclock",
     "productName": "TimeClock App",
+    "publish": null,
     "asarUnpack": [
     "node_modules/playwright/**/*"
   ],
