@@ -7,6 +7,9 @@
   "build": {
     "appId": "com.akto-n.timeclock",
     "productName": "TimeClock App",
+    "asarUnpack": [
+    "node_modules/playwright/**/*"
+  ],
     "files": [
       "dist-electron/**/*",
       "dist/**/*",
