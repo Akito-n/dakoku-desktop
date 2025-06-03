@@ -40,7 +40,7 @@ export const settingsHandlers = {
     return {
       ...config,
       url,
-      isConfigured: isJobcanConfigured(), // 動的に計算
+      isConfigured: isJobcanConfigured(),
     };
   },
 
@@ -262,7 +262,7 @@ export const settingsHandlers = {
       },
       slackwf: {
         ...config.slackwf,
-        password: config.slackwf.password ? "***" : "",
+        password: config.slackwf.googlePassword ? "***" : "",
       },
     });
 

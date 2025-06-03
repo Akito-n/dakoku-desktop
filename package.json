@@ -1,11 +1,69 @@
 {
   "name": "timeclock-app",
+  "author": "Akto-n",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.1",
   "type": "module",
+  "build": {
+    "appId": "com.akto-n.timeclock",
+    "productName": "TimeClock App",
+    "asarUnpack": [
+    "node_modules/playwright/**/*"
+  ],
+    "files": [
+      "dist-electron/**/*",
+      "dist/**/*",
+      "scripts/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+    {
+      "from": "scripts/",
+      "to": "scripts/"
+    }],
+    "directories": {
+      "output": "dist"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ]
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ]
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    }
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build && electron-builder",
+    "build:dir": "tsc && vite build && electron-builder --dir",
+    "build:mac": "tsc && vite build && electron-builder --mac",
+    "build:win": "tsc && vite build && electron-builder --win", 
+    "build:linux": "tsc && vite build && electron-builder --linux",
     "preview": "vite preview",
     "lint": "biome lint src/",
     "lint:fix": "biome lint --apply src/",

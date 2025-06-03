@@ -32,11 +32,8 @@ export const useUpdateJobcanCredentials = () => {
       email,
       password,
     }: { email: string; password: string }): Promise<JobcanConfig> => {
-      const result = await window.electronAPI.config.setJobcanCredentials(
-        email,
-        password,
-      );
-      return result;
+      await window.electronAPI.config.setJobcanCredentials(email, password);
+      return await window.electronAPI.config.getJobcan();
     },
     onSuccess: (data) => {
       queryClient.setQueryData(jobcanQueryKeys.config(), data);
@@ -52,7 +49,7 @@ export const useUpdateJobcanUrl = () => {
       const result = await window.electronAPI.config.setJobcanUrl(url);
       return result;
     },
-    onSuccess: (data, url) => {
+    onSuccess: (_data, url) => {
       queryClient.setQueryData(
         jobcanQueryKeys.config(),
         (old: JobcanConfig | undefined) => (old ? { ...old, url } : undefined),
@@ -66,8 +63,8 @@ export const useClearJobcanConfig = () => {
 
   return useMutation({
     mutationFn: async (): Promise<JobcanConfig> => {
-      const result = await window.electronAPI.config.clearJobcan();
-      return result;
+      await window.electronAPI.config.clearJobcan();
+      return await window.electronAPI.config.getJobcan();
     },
     onSuccess: (data) => {
       queryClient.setQueryData(jobcanQueryKeys.config(), data);

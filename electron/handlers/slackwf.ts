@@ -91,7 +91,7 @@ export const slackwfHandlers = {
         }
       });
 
-      child.on("close", (code, signal) => {
+      child.on("close", (code, _signal) => {
         const elapsed = Date.now() - startTime;
         console.log(
           `🔵 CLOSE: ${elapsed}ms - SlackWFプロセス ${child.pid} ストリーム閉鎖`,
