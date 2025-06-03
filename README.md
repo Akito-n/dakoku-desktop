@@ -66,3 +66,11 @@ npm run build
 
 ### ログ確認
 アプリケーションコンソールでPlaywright実行ログを確認できます。
+
+## インストール手順（現状）
+1. GitHub Releasesからダウンロード
+2. `xattr -dr com.apple.quarantine ~/Downloads/ファイル名.dmg`
+3. インストール・実行
+
+2はstore公開アプリではない故の対策。macだとappstoreのものではない関係上公式な署名がないので”壊れています”のようなメッセージがポップアップされる。これを押し通るためのもの
+
