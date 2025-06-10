@@ -41,16 +41,6 @@ export const JobcanSettings: React.FC = () => {
 
   const { showSuccess, showError, showWarning } = useToast();
 
-  useEffect(() => {
-    if (jobcanConfig) {
-      setFormData({
-        email: jobcanConfig.email,
-        password: jobcanConfig.password,
-        url: jobcanConfig.url,
-      });
-    }
-  }, [jobcanConfig]);
-
   const handleSaveCredentials = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -92,7 +82,7 @@ export const JobcanSettings: React.FC = () => {
 
   const handleTestConfig = async () => {
     try {
-      const result = await testConfigMutation.mutateAsync();
+      const result = await window.electronAPI.jobcan.execute("check-in", true);
       showSuccess(result.message);
     } catch (error) {
       console.error("テストエラー:", error);
@@ -101,6 +91,16 @@ export const JobcanSettings: React.FC = () => {
       );
     }
   };
+
+  useEffect(() => {
+    if (jobcanConfig) {
+      setFormData({
+        email: jobcanConfig.email,
+        password: jobcanConfig.password,
+        url: jobcanConfig.url,
+      });
+    }
+  }, [jobcanConfig]);
 
   if (loadError) {
     return (

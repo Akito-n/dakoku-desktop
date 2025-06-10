@@ -1,10 +1,4 @@
 import { chromium, type Browser, type Page } from "playwright";
-import { fileURLToPath } from "node:url";
-import { dirname } from "node:path";
-
-// ESモジュール対応
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 export class BrowserController {
   private browser: Browser | null = null;
