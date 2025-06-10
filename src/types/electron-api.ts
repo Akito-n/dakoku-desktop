@@ -16,7 +16,10 @@ export interface ElectronAPI {
   };
 
   slackwf: {
-    execute: (action: CheckActionType) => Promise<{
+    execute: (
+      action: CheckActionType,
+      dryRun?: boolean,
+    ) => Promise<{
       success: boolean;
       message: string;
     }>;
