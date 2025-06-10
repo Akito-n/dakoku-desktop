@@ -32,8 +32,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
   },
 
   slackwf: {
-    execute: (action: CheckActionType) =>
-      ipcRenderer.invoke("slackwf:execute", action),
+    execute: (action: CheckActionType, dryRun: boolean) =>
+      ipcRenderer.invoke("slackwf:execute", action, dryRun),
   },
 
   // === 設定管理API ===
