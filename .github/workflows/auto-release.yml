@@ -81,10 +81,19 @@ jobs:
         env:
           NODE_ENV: production
       
-      - name: Debug - List built files
+      - name: Debug - List built files (Unix)
+        if: runner.os != 'Windows'
         run: |
           echo "=== Built files in dist/ ==="
           find dist/ -name "*.dmg" -o -name "*.exe" | sort
+          echo "=== End of built files ==="
+      
+      - name: Debug - List built files (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          echo "=== Built files in dist/ ==="
+          Get-ChildItem -Path dist/ -Recurse -Include *.dmg,*.exe | ForEach-Object { $_.FullName }
           echo "=== End of built files ==="
       
       - name: Upload artifacts
@@ -109,15 +118,18 @@ jobs:
           path: ./release-artifacts
       
       - name: Debug - List release artifacts structure
+        shell: bash
         run: |
           echo "=== Release artifacts structure ==="
-          find ./release-artifacts -type f -name "*.dmg" -o -name "*.exe" | sort
+          find ./release-artifacts -type f -name "*.dmg" -o -name "*.exe" 2>/dev/null | sort || echo "No dmg/exe files found with find"
           echo "=== Directory structure ==="
-          ls -la ./release-artifacts/
+          ls -la ./release-artifacts/ 2>/dev/null || dir ./release-artifacts/
           echo "=== Individual artifact contents ==="
           for dir in ./release-artifacts/*/; do
-            echo "--- $dir ---"
-            ls -la "$dir" | grep -E "\.(dmg|exe)$" || echo "No dmg/exe files found"
+            if [ -d "$dir" ]; then
+              echo "--- $dir ---"
+              ls -la "$dir" 2>/dev/null | grep -E "\.(dmg|exe)$" || echo "No dmg/exe files found in $dir"
+            fi
           done
           echo "=== End of structure ==="
       
