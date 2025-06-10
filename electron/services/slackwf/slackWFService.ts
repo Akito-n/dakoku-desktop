@@ -358,21 +358,16 @@ export class SlackWFService extends PlaywrightBase {
   ): Promise<void> {
     console.log(`🏠 退勤WF処理を開始します${dryRun ? " (テストモード)" : ""}`);
 
-    // 現在の日付を取得（yyyy/mm/dd形式）
     const now = new Date();
     const dateString = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, "0")}/${String(now.getDate()).padStart(2, "0")}`;
-
-    // 勤怠ログボタンをクリック
     await this.clickAttendanceLogButton();
 
-    // フォームに入力
     await this.fillAttendanceForm("退勤", dateString, endTime);
 
     if (dryRun) {
       console.log("🧪 テストモード: ワークフロー送信はしません");
       console.log("✅ 退勤WF処理のテスト完了（実際の送信なし）");
     } else {
-      // 送信
       await this.submitAttendanceForm();
       console.log("✅ 退勤WF処理が完了しました");
     }
@@ -385,8 +380,6 @@ export class SlackWFService extends PlaywrightBase {
     const page = this.getPage();
 
     try {
-      console.log("🔘 勤怠ログボタンを探しています...");
-
       const buttonSelectors = [
         'button[aria-label="勤怠ログ"]',
         'button[data-qa="composer-workflow-button"]',
@@ -436,7 +429,6 @@ export class SlackWFService extends PlaywrightBase {
     try {
       console.log(`📝 勤怠フォームに入力中: ${type}, ${date}, ${time}`);
 
-      // 1. 出勤/退勤の選択（コンボボックス）
       const typeSelectors = [
         'input[role="combobox"][aria-label="オプションを選択する"]',
         "input.c-select_input",
