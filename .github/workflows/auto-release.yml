@@ -81,6 +81,12 @@ jobs:
         env:
           NODE_ENV: production
       
+      - name: Debug - List built files
+        run: |
+          echo "=== Built files in dist/ ==="
+          find dist/ -name "*.dmg" -o -name "*.exe" | sort
+          echo "=== End of built files ==="
+      
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -101,6 +107,19 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: ./release-artifacts
+      
+      - name: Debug - List release artifacts structure
+        run: |
+          echo "=== Release artifacts structure ==="
+          find ./release-artifacts -type f -name "*.dmg" -o -name "*.exe" | sort
+          echo "=== Directory structure ==="
+          ls -la ./release-artifacts/
+          echo "=== Individual artifact contents ==="
+          for dir in ./release-artifacts/*/; do
+            echo "--- $dir ---"
+            ls -la "$dir" | grep -E "\.(dmg|exe)$" || echo "No dmg/exe files found"
+          done
+          echo "=== End of structure ==="
       
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
@@ -127,9 +146,9 @@ jobs:
             ### 変更内容
             詳細はCHANGELOG.mdをご確認ください。
           files: |
-            ./release-artifacts/**/*.dmg
-            ./release-artifacts/**/*.exe
-            !./release-artifacts/**/elevate.exe
+            ./release-artifacts/TimeClock-macOS-ARM64-v${{ needs.check-version.outputs.new-version }}/*-arm64.dmg
+            ./release-artifacts/TimeClock-macOS-Intel-v${{ needs.check-version.outputs.new-version }}/*.dmg
+            ./release-artifacts/TimeClock-Windows-v${{ needs.check-version.outputs.new-version }}/TimeClock Setup *.exe
           draft: false
           prerelease: false
           fail_on_unmatched_files: false
