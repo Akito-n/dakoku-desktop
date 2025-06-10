@@ -3,7 +3,6 @@ import path from "node:path";
 import electron from "vite-plugin-electron/simple";
 import react from "@vitejs/plugin-react";
 
-// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
     react(),
@@ -13,7 +12,23 @@ export default defineConfig({
         vite: {
           build: {
             commonjsOptions: {
-              include: [/playwright/, /node_modules/], // Playwrightの依存関係を含める
+              include: [/playwright/, /node_modules/],
+            },
+            rollupOptions: {
+              external: [
+                "electron",
+                "playwright",
+                "playwright-core",
+                "@playwright/test",
+              ],
+            },
+          },
+          define: {
+            __dirname: "__dirname",
+          },
+          resolve: {
+            alias: {
+              "@": path.resolve(__dirname, "./src"),
             },
           },
         },
@@ -25,6 +40,6 @@ export default defineConfig({
     }),
   ],
   optimizeDeps: {
-    exclude: ["playwright"], // Playwrightを最適化から除外
+    exclude: ["playwright"],
   },
 });

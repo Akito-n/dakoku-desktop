@@ -262,7 +262,7 @@ export const settingsHandlers = {
       },
       slackwf: {
         ...config.slackwf,
-        password: config.slackwf.password ? "***" : "",
+        password: config.slackwf.googlePassword ? "***" : "",
       },
     });
 
