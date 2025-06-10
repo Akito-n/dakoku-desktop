@@ -13,4 +13,3 @@ ReactDOM.createRoot(rootElement).render(
     <App />
   </React.StrictMode>,
 );
-// Use contextBridge

@@ -21,22 +21,19 @@ contextBridge.exposeInMainWorld("ipcRenderer", {
     const [channel, ...omit] = args;
     return ipcRenderer.invoke(channel, ...omit);
   },
-
-  // You can expose other APTs you need here.
-  // ...
 });
 contextBridge.exposeInMainWorld("electronAPI", {
   openJobcan: () => ipcRenderer.invoke("playwright:open-jobcan"),
   openSlackWF: () => ipcRenderer.invoke("playwright:open-slackwf"),
 
   jobcan: {
-    execute: (action: CheckActionType) =>
-      ipcRenderer.invoke("jobcan:execute", action),
+    execute: (action: CheckActionType, dryRun: boolean) =>
+      ipcRenderer.invoke("jobcan:execute", action, dryRun),
   },
 
   slackwf: {
-    execute: (action: CheckActionType) =>
-      ipcRenderer.invoke("slackwf:execute", action),
+    execute: (action: CheckActionType, dryRun: boolean) =>
+      ipcRenderer.invoke("slackwf:execute", action, dryRun),
   },
 
   // === 設定管理API ===

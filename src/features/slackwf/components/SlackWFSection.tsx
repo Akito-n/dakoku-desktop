@@ -63,7 +63,6 @@ export const SlackWFSection: React.FC = () => {
   return (
     <>
       <ButtonGroup vertical style={{ minWidth: "320px" }}>
-        {/* メイン機能：出退勤両方 */}
         <ActionButton
           label="SlackWF 出退勤"
           icon="chat"
@@ -78,7 +77,6 @@ export const SlackWFSection: React.FC = () => {
           }}
         />
 
-        {/* サブオプション：個別処理 */}
         <div style={{ marginTop: "12px" }}>
           <ButtonGroup fill style={{ display: "flex", gap: "2px" }}>
             <ActionButton

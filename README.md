@@ -1,76 +1,172 @@
-# Dakoku Desktop
+# TimeClock App
 
-勤怠管理を自動化するElectronアプリケーション。JobcanとSlackの勤怠ログを自動送信します。
+<div align="center">
+  <img src="./icon.png" alt="TimeClock App Icon" width="128" height="128">
+  
+  **勤怠管理を自動化するデスクトップアプリケーション**
+  
+  [![Release](https://img.shields.io/github/v/release/your-username/dakoku-app)](https://github.com/your-username/dakoku-app/releases)
+  [![License](https://img.shields.io/github/license/your-username/dakoku-app)](LICENSE)
+  [![macOS](https://img.shields.io/badge/platform-macOS-lightgrey)](https://github.com/your-username/dakoku-app/releases)
+  [![Windows](https://img.shields.io/badge/platform-Windows-blue)](https://github.com/your-username/dakoku-app/releases)
+</div>
 
-## 機能
+## 🚀 概要
 
-- **Jobcan自動打刻**: 出勤・退勤時刻を自動で打刻
-- **SlackWF勤怠ログ**: Slackワークフローで勤怠ログを自動送信
-- **設定管理**: 認証情報と勤務時間の管理
+TimeClock Appは、JobcanとSlack Workflow Plusでの勤怠打刻を自動化するElectronアプリケーションです。
+毎日の出勤・退勤処理を効率化し、打刻忘れを防止します。
 
-## 必要な環境
+### ✨ 主な機能
 
-- **Jobcanアカウント**: 打刻修正権限が必要
-- **Slackワークスペース**: Google認証でアクセス可能
-- **勤怠ログワークフロー**: Slack側で設定済みであること
+- **🏢 Jobcan自動打刻**: 出勤・退勤時刻の自動入力と送信
+- **💬 Slack Workflow Plus対応**: 勤怠ワークフローの自動送信
 
-## インストール・起動
+## 💻 動作環境
 
-### 開発環境
+- **macOS**: 10.14 (Mojave) 以降
+- **Windows**: Windows 10 以降
+- **メモリ**: 4GB RAM以上推奨
+- **ストレージ**: 約500MB
+
+## 📦 インストール
+
+### macOS
+1. [Releases](https://github.com/your-username/dakoku-app/releases)から最新版をダウンロード
+2. `TimeClock App-x.x.x.dmg`をダブルクリック
+3. アプリケーションフォルダにドラッグ&ドロップ
+
+### Windows
+1. [Releases](https://github.com/your-username/dakoku-app/releases)から最新版をダウンロード
+2. `TimeClock App Setup x.x.x.exe`を実行
+3. インストールウィザードに従ってセットアップ
+
+## ⚙️ 初期設定
+
+### 1. 勤務時間の設定
+- アプリを起動後、「設定」タブを開く
+- 出勤時刻・退勤時刻を設定（例：9:00、18:00）
+
+### 2. Jobcan設定
+- JobcanのログインURL
+- メールアドレスとパスワード
+- 「テスト」ボタンで動作確認
+
+### 3. Slack Workflow Plus設定
+- ワークスペース名
+- Googleアカウント情報
+- 対象チャンネルURL（オプション）
+
+## 🎯 使用方法
+
+### 基本操作
+1. **出勤時**: 「Jobcan 出退勤」または「出勤」ボタンをクリック
+2. **退勤時**: 「退勤」ボタンをクリック
+3. **両方実行**: メインボタンで出勤・退勤を一度に処理
+
+### テストモード
+- 設定画面の「テスト」ボタンで実際の送信なしで動作確認
+- フォーム入力まで実行され、送信はスキップされます
+
+## 🔧 技術仕様
+
+### 使用技術
+- **フレームワーク**: Electron 30.x
+- **フロントエンド**: React 18 + TypeScript
+- **UI**: Blueprint.js
+- **状態管理**: TanStack Query
+- **自動化**: Playwright (Chromium)
+- **設定管理**: electron-store
+
+### アーキテクチャ
+```
+┌─────────────────┐    ┌──────────────────┐
+│   React UI      │    │  Electron Main   │
+│   (Renderer)    │◄──►│   Process        │
+└─────────────────┘    └──────────────────┘
+                                │
+                       ┌─────────▼─────────┐
+                       │   Playwright      │
+                       │   Services        │
+                       └─────────┬─────────┘
+                                 │
+                    ┌────────────┴────────────┐
+                    ▼                         ▼
+            ┌───────────────┐         ┌──────────────┐
+            │    Jobcan     │         │   SlackWF    │
+            │  Web Service  │         │   Service    │
+            │               │         │      │       │
+            │ ┌───────────┐ │         │ ┌────▼────┐  │
+            │ │ Form Auto │ │         │ │ Google  │  │
+            │ │   Fill    │ │         │ │  Auth   │  │
+            │ └───────────┘ │         │ └─────────┘  │
+            └───────────────┘         │ ┌─────────┐  │
+                                      │ │Workflow │  │
+                                      │ │ Submit  │  │
+                                      │ └─────────┘  │
+                                      └──────────────┘
+```
+
+## 🚧 開発
+
+### 前提条件
+- Node.js 20.x 以降
+- npm または yarn
+
+### セットアップ
 ```bash
+# リポジトリのクローン
+git clone https://github.com/your-username/dakoku-app.git
+cd dakoku-app
+
+# 依存関係のインストール
 npm install
+
+# Playwrightのセットアップ
+npx playwright install chromium
+
+# 開発サーバーの起動
 npm run dev
 ```
 
-### 本番ビルド
+### ビルド
 ```bash
-npm run build
+# macOS用
+npm run build:mac
+
+# Windows用
+npm run build:win
+
+# 開発用（distディレクトリのみ）
+npm run build:dir
 ```
 
-## 初回設定
+### コード品質
+```bash
+# リンターの実行
+npm run lint
 
-### 1. 勤務時間設定
-- 設定画面で出勤・退勤時刻を設定（例: 09:00、18:00）
+# フォーマットの適用
+npm run format
+```
 
-### 2. Jobcan設定
-- **URL**: Jobcanログインページ（通常はデフォルトのまま）
-- **メールアドレス**: Jobcanログイン用
-- **パスワード**: Jobcanログイン用
 
-### 3. SlackWF設定
-- **ワークスペース名**: Slackワークスペース名
-- **Googleメール**: Slack認証用Googleアカウント
-- **Googleパスワード**: 同上
-- **チャンネルURL**: 勤怠ログ送信先チャンネル（オプション）
+## 📝 変更履歴
 
-## 使用方法
+### v1.0.1 (2025-06-10)
+- ✨ CJSからTypeScriptへの完全移行
+- 🔧 Slack Workflow Plus認証の安定化
+- 🧪 DryRunモード（テスト機能）の追加
+- 🎨 カスタムアプリアイコンの実装
+- 🐛 ダイアログ回避とセッション維持の改善
 
-1. **設定完了後**、ホーム画面でボタンをクリック
-2. **ブラウザが自動起動**し、処理を実行
-3. **処理完了後**はブラウザを閉じるかそのまま放置
-4. **エラー時**はトースト通知で原因を確認
+### v1.0.0
+- 🔧 初期機能実装
+- 📱 基本的なJobcan/SlackWF対応
 
-## 注意事項
 
-- **認証情報はローカルに保存**されます
-- **ブラウザは15分で自動終了**します
-- **2段階認証**が有効な場合は手動操作が必要な場合があります
-- **VPN接続**など、ネットワーク環境によっては動作しない場合があります
+## ⚠️ 免責事項
 
-## トラブルシューティング
 
-### よくある問題
-- **ログイン失敗**: 認証情報を再確認
-- **要素が見つからない**: サイトの仕様変更の可能性
-- **タイムアウト**: ネットワーク環境を確認
-
-### ログ確認
-アプリケーションコンソールでPlaywright実行ログを確認できます。
-
-## インストール手順（現状）
-1. GitHub Releasesからダウンロード
-2. `xattr -dr com.apple.quarantine ~/Downloads/ファイル名.dmg`
-3. インストール・実行
-
-2はstore公開アプリではない故の対策。macだとappstoreのものではない関係上公式な署名がないので”壊れています”のようなメッセージがポップアップされる。これを押し通るためのもの
-
+- このアプリケーションは非公式ツールです
+- 使用は自己責任でお願いします
+- Jobcan・Slack Workflow Plusの仕様変更により動作しなくなる可能性があります
