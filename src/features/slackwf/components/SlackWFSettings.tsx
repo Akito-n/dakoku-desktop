@@ -113,7 +113,7 @@ export const SlackWFSettings: React.FC = () => {
 
   const handleTestConfig = async () => {
     try {
-      const result = await testConfigMutation.mutateAsync();
+      const result = await window.electronAPI.slackwf.execute("check-in", true);
       showSuccess(result.message);
     } catch (error) {
       console.error("SlackWFテストエラー:", error);
@@ -122,7 +122,6 @@ export const SlackWFSettings: React.FC = () => {
       );
     }
   };
-
   if (loadError) {
     return (
       <Card elevation={2} style={{ marginBottom: "20px" }}>
