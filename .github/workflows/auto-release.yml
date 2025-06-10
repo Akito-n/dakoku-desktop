@@ -49,10 +49,16 @@ jobs:
       matrix:
         include:
           - os: macos-14 
-            platform: mac
-            artifact-name: TimeClock-macOS
+            platform: mac:arm64
+            script: build:mac:arm64
+            artifact-name: TimeClock-macOS-ARM64
+          - os: macos-14
+            platform: mac:x64  
+            script: build:mac:x64
+            artifact-name: TimeClock-macOS-Intel
           - os: windows-latest
             platform: win
+            script: build:win
             artifact-name: TimeClock-Windows
     
     runs-on: ${{ matrix.os }}
@@ -110,6 +116,13 @@ jobs:
             ## 🚀 Release v${{ needs.check-version.outputs.new-version }}
             
             自動生成されたリリースです。
+
+            MacOSの場合、ライセンス認証を通してストアに登録しているアプリではないのでApplicationに移動させても”壊れています”という旨のメッセージが出てしまい、そのままだと開けません。
+            Applicationに移動させた後、
+            ```sh
+              sudo xattr -rd com.apple.quarantine "/Applications/TimeClock.app"
+            ```
+            として許可するようにしてから開く必要があります。
             
             ### ダウンロード
             - **macOS Intel**: TimeClock App-${{ needs.check-version.outputs.new-version }}.dmg
