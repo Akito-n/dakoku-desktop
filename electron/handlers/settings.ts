@@ -40,7 +40,7 @@ export const settingsHandlers = {
     return {
       ...config,
       url,
-      isConfigured: isJobcanConfigured(), // 動的に計算
+      isConfigured: isJobcanConfigured(),
     };
   },
 
