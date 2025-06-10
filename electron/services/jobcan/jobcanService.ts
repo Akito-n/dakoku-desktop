@@ -6,7 +6,6 @@ import {
 import { PlaywrightBase } from "../shared/playWrightBase";
 import type { ElementHandle } from "playwright";
 
-// ファイル内型定義
 interface LoginCredentials {
   email: string;
   password: string;
@@ -18,7 +17,6 @@ interface LoginResult {
 }
 
 export class JobcanService extends PlaywrightBase {
-  // セレクタ定数（static readonly）
   private static readonly EMAIL_SELECTORS = [
     'input[name="user[email]"]',
     'input[type="email"]',
@@ -57,31 +55,25 @@ export class JobcanService extends PlaywrightBase {
     try {
       console.log("🔐 Jobcanにログイン中...");
 
-      // メールアドレス入力
       const emailField = await this.findElement(
         JobcanService.EMAIL_SELECTORS,
         "メールアドレス入力フィールド",
       );
       await emailField.fill(credentials.email);
 
-      // パスワード入力
       const passwordField = await this.findElement(
         JobcanService.PASSWORD_SELECTORS,
         "パスワード入力フィールド",
       );
       await passwordField.fill(credentials.password);
 
-      // ログインボタンクリック
       const loginButton = await this.findElement(
         JobcanService.LOGIN_BUTTON_SELECTORS,
         "ログインボタン",
       );
       await loginButton.click();
-
-      // ログイン完了待機
       await this.waitForLoginComplete();
 
-      console.log("✅ ログイン処理完了");
       return { success: true };
     } catch (error) {
       const message = `ログインに失敗しました: ${error instanceof Error ? error.message : "Unknown error"}`;
@@ -110,7 +102,7 @@ export class JobcanService extends PlaywrightBase {
     selectors: readonly string[],
     elementName: string,
   ): Promise<ElementHandle> {
-    const page = this.getPage(); // 型安全なアクセス
+    const page = this.getPage();
 
     for (const selector of selectors) {
       try {
@@ -136,7 +128,6 @@ export class JobcanService extends PlaywrightBase {
       await page.waitForLoadState("networkidle", { timeout: 10000 });
     } catch (error) {
       console.log("⚠️ ページ遷移の完了を待機中...");
-      // タイムアウトしても処理を継続（既存の動作を維持）
     }
   }
 
@@ -147,12 +138,10 @@ export class JobcanService extends PlaywrightBase {
     const page = this.getPage();
 
     try {
-      console.log("🔍 勤怠リンクを探しています...");
+      console.log("勤怠リンクを探しています...");
 
-      // 少し待機してからリンクを探索
       await page.waitForTimeout(3000);
 
-      // JavaScript実行でリンクを探してクリック
       const clickResult = await page.evaluate(() => {
         const links = Array.from(document.querySelectorAll("a"));
 
@@ -183,13 +172,8 @@ export class JobcanService extends PlaywrightBase {
         throw new Error("表示されている勤怠リンクが見つかりません");
       }
 
-      console.log(`✅ 勤怠リンクをクリックしました: ${clickResult.href}`);
-      console.log("⏳ ページ遷移を待機中...");
-
-      // ページ遷移を待機
       await page.waitForTimeout(2000);
 
-      // 新しいタブが開かれた場合の処理
       const context = page.context();
       const pages = context.pages();
 
@@ -199,10 +183,8 @@ export class JobcanService extends PlaywrightBase {
         await newPage.waitForLoadState("networkidle", { timeout: 15000 });
         console.log("✅ 勤怠管理画面に遷移しました");
 
-        // 新しいページに切り替え
         this.page = newPage;
       } else {
-        // 同じタブでの遷移の場合
         await page.waitForLoadState("networkidle", { timeout: 15000 });
         console.log("✅ 勤怠管理画面に遷移しました");
       }
@@ -221,7 +203,6 @@ export class JobcanService extends PlaywrightBase {
     try {
       console.log("🔍 打刻修正画面に直接遷移します...");
 
-      // ページが完全に読み込まれるのを待機
       await page.waitForTimeout(2000);
 
       const timeCorrectionUrl = "https://ssl.jobcan.jp/employee/adit/modify/";
@@ -235,7 +216,6 @@ export class JobcanService extends PlaywrightBase {
         console.log("✅ 打刻修正画面に遷移しました");
       } catch (error) {
         console.log("⚠️ ページ遷移の完了を待機中...");
-        // タイムアウトしても処理を継続（既存の動作を維持）
       }
     } catch (error) {
       console.error("❌ 打刻修正画面への遷移に失敗:", error);
@@ -275,19 +255,15 @@ export class JobcanService extends PlaywrightBase {
     console.log(`🏢 出勤打刻を開始します${dryRun ? " (テストモード)" : ""}`);
 
     const formattedTime = this.formatTimeForJobcan(startTime);
-    const notice = "システムによる自動打刻";
+    const notice = "打刻";
 
-    // 備考入力
     await this.inputNotice(notice);
-
-    // 出勤時刻入力
     await this.inputStartTime(formattedTime);
 
     if (dryRun) {
       console.log("🧪 テストモード: 打刻ボタンはクリックしません");
       console.log("✅ 出勤打刻のテスト完了（実際の打刻なし）");
     } else {
-      // 実際の打刻実行
       await this.clickPunchButton("出勤");
       console.log("✅ 出勤打刻が完了しました");
     }
@@ -300,15 +276,10 @@ export class JobcanService extends PlaywrightBase {
     endTime: string,
     dryRun: boolean,
   ): Promise<void> {
-    console.log(`🏠 退勤打刻を開始します${dryRun ? " (テストモード)" : ""}`);
-
     const formattedTime = this.formatTimeForJobcan(endTime);
-    const notice = "システムによる自動打刻";
+    const notice = "打刻";
 
-    // 備考入力
     await this.inputNotice(notice);
-
-    // 退勤時刻入力
     await this.inputEndTime(formattedTime);
 
     if (dryRun) {

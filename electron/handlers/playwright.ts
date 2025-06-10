@@ -58,9 +58,6 @@ export const playwrightHandlers = {
         },
       });
 
-      console.log(`🚀 子プロセス起動: PID ${child.pid}`);
-      console.log(`🔐 認証情報を環境変数で渡しました`);
-
       // すべてのイベントに詳細ログを追加
       child.on("spawn", () => {
         const elapsed = Date.now() - startTime;
@@ -91,7 +88,6 @@ export const playwrightHandlers = {
         );
         console.log(`  - exitCode: ${code}`);
         console.log(`  - signal: ${signal}`);
-        console.log(`  - すべてのstdioストリームが閉じられました`);
 
         // exit イベントが発火しなかった場合のフォールバック
         if (!child.exitCode && code === 0) {
