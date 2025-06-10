@@ -14,7 +14,6 @@
     "files": [
       "dist-electron/**/*",
       "dist/**/*",
-      "scripts/**/*",
       "package.json"
     ],
     "extraResources": [
@@ -56,7 +55,6 @@
     "build:linux": "tsc && vite build && electron-builder --linux",
     "preview": "vite preview",
     "lint": "biome lint src/",
-    "lint:fix": "biome lint --apply src/",
     "format": "biome format --write src/"
   },
   "dependencies": {
