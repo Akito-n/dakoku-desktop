@@ -70,6 +70,41 @@ export abstract class PlaywrightBase {
   }
 
   /**
+   * 同一コンテキスト内で新しいタブを作成（セッション共有）
+   */
+  protected async createNewTabInSameContext(url: string): Promise<void> {
+    const page = this.getPage();
+
+    try {
+      // 同じコンテキスト内で新しいページ（タブ）を作成
+      const context = page.context();
+      const newPage = await context.newPage();
+
+      console.log("🔄 新しいタブを作成中...");
+
+      // 新しいタブに遷移
+      await newPage.goto(url, {
+        waitUntil: "domcontentloaded",
+        timeout: 45000,
+      });
+
+      console.log("✅ 新しいタブでページ読み込み完了");
+
+      // 元のページを閉じる
+      await page.close();
+      console.log("🗂️ 元の認証ページを閉じました");
+
+      // 新しいページに切り替え
+      this.page = newPage;
+
+      console.log("✅ 新しいタブに操作対象を切り替え完了");
+    } catch (error) {
+      console.error("❌ 新しいタブ作成エラー:", error);
+      throw error;
+    }
+  }
+
+  /**
    * ページの待機処理
    */
   protected async waitForTimeout(ms: number): Promise<void> {
