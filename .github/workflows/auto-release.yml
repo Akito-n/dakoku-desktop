@@ -1,0 +1,127 @@
+name: Auto Release on Version Change
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version-changed: ${{ steps.check.outputs.changed }}
+      new-version: ${{ steps.check.outputs.version }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Check version change
+        id: check
+        run: |
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          git checkout HEAD~1 -- package.json
+          PREVIOUS_VERSION=$(node -p "require('./package.json').version")
+          git checkout HEAD -- package.json
+          
+          echo "Previous version: $PREVIOUS_VERSION"
+          echo "Current version: $CURRENT_VERSION"
+          
+          if [ "$CURRENT_VERSION" != "$PREVIOUS_VERSION" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+            echo "✅ Version changed: $PREVIOUS_VERSION → $CURRENT_VERSION"
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ No version change detected"
+          fi
+
+  build-and-release:
+    needs: check-version
+    if: needs.check-version.outputs.version-changed == 'true'
+    strategy:
+      matrix:
+        include:
+          - os: macos-14 
+            platform: mac
+            artifact-name: TimeClock-macOS
+          - os: windows-latest
+            platform: win
+            artifact-name: TimeClock-Windows
+    
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'  
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      # ← Playwrightセットアップを追加
+      - name: Install Playwright
+        run: npx playwright install chromium
+        
+      - name: Build application
+        run: npm run build:${{ matrix.platform }}
+        env:
+          
+          NODE_ENV: production
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact-name }}-v${{ needs.check-version.outputs.new-version }}
+          path: dist/
+          retention-days: 30
+
+  create-release:
+    needs: [check-version, build-and-release]
+    runs-on: ubuntu-latest
+    if: needs.check-version.outputs.version-changed == 'true'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./release-artifacts
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.check-version.outputs.new-version }}
+          name: Release v${{ needs.check-version.outputs.new-version }}
+          body: |
+            ## 🚀 Release v${{ needs.check-version.outputs.new-version }}
+            
+            自動生成されたリリースです。
+            
+            ### ダウンロード
+            - **macOS Intel**: TimeClock App-${{ needs.check-version.outputs.new-version }}.dmg
+            - **macOS Apple Silicon**: TimeClock App-${{ needs.check-version.outputs.new-version }}-arm64.dmg
+            - **Windows**: TimeClock App Setup ${{ needs.check-version.outputs.new-version }}.exe
+            
+            ### 変更内容
+            詳細はCHANGELOG.mdをご確認ください。
+          files: |
+            ./release-artifacts/**/*.dmg
+            ./release-artifacts/**/*.exe
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
