@@ -34,6 +34,7 @@ TimeClock Appは、JobcanとSlack Workflow Plusでの勤怠打刻を自動化す
 1. [Releases](https://github.com/your-username/dakoku-app/releases)から最新版をダウンロード
 2. `TimeClock App-x.x.x.dmg`をダブルクリック
 3. アプリケーションフォルダにドラッグ&ドロップ
+<img width="487" alt="SCR-20250611-qmhk" src="https://github.com/user-attachments/assets/02c40ca1-1530-4587-9402-65693eafb2a2" />
 
 MacOSの場合、ライセンス認証を通してストアに登録しているアプリではないのでApplicationに移動させても"壊れています"という旨のメッセージが出てしまい、そのままだと開けません。
 Applicationに移動させた後、
