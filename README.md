@@ -35,10 +35,15 @@ TimeClock Appは、JobcanとSlack Workflow Plusでの勤怠打刻を自動化す
 2. `TimeClock App-x.x.x.dmg`をダブルクリック
 3. アプリケーションフォルダにドラッグ&ドロップ
 
+![SCR-20250611-qmtc](https://github.com/user-attachments/assets/22c648d6-0297-435c-b950-01060cbbdc13)
+
+
 MacOSの場合、ライセンス認証を通してストアに登録しているアプリではないのでApplicationに移動させても"壊れています"という旨のメッセージが出てしまい、そのままだと開けません。
 Applicationに移動させた後、
 
-  sudo xattr -rd com.apple.quarantine "/Applications/TimeClock.app"
+```sh
+ sudo xattr -rd com.apple.quarantine "/Applications/TimeClock.app"
+```
 としてチェックを外してから開く必要があります。
 
 ### Windows
