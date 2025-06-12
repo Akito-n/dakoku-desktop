@@ -2,7 +2,7 @@
   "name": "timeclock",
   "author": "Akto-n",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.0.7",
   "type": "module",
   "build": {
     "appId": "com.akto-n.timeclock",
@@ -30,11 +30,7 @@
     "mac": {
       "target": [
         {
-          "target": "dmg",
-          "arch": [
-            "x64",
-            "arm64"
-          ]
+          "target": "dmg"
         }
       ]
     },
@@ -54,6 +50,8 @@
     "build": "tsc && vite build && electron-builder",
     "build:dir": "tsc && vite build && electron-builder --dir",
     "build:mac": "tsc && vite build && electron-builder --mac",
+    "build:mac:arm64": "tsc && vite build && electron-builder --mac --arm64",
+    "build:mac:x64": "tsc && vite build && electron-builder --mac --x64", 
     "build:win": "tsc && vite build && electron-builder --win",
     "build:linux": "tsc && vite build && electron-builder --linux",
     "preview": "vite preview",

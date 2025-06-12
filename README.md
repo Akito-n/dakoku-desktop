@@ -34,6 +34,18 @@ TimeClock Appは、JobcanとSlack Workflow Plusでの勤怠打刻を自動化す
 1. [Releases](https://github.com/your-username/dakoku-app/releases)から最新版をダウンロード
 2. `TimeClock App-x.x.x.dmg`をダブルクリック
 3. アプリケーションフォルダにドラッグ&ドロップ
+<img width="487" alt="SCR-20250611-qmhk" src="https://github.com/user-attachments/assets/02c40ca1-1530-4587-9402-65693eafb2a2" />
+
+![SCR-20250611-qmtc](https://github.com/user-attachments/assets/22c648d6-0297-435c-b950-01060cbbdc13)
+
+
+MacOSの場合、ライセンス認証を通してストアに登録しているアプリではないのでApplicationに移動させても"壊れています"という旨のメッセージが出てしまい、そのままだと開けません。
+Applicationに移動させた後、
+
+```sh
+ sudo xattr -rd com.apple.quarantine "/Applications/TimeClock.app"
+```
+としてチェックを外してから開く必要があります。
 
 ### Windows
 1. [Releases](https://github.com/your-username/dakoku-app/releases)から最新版をダウンロード
@@ -148,21 +160,6 @@ npm run lint
 # フォーマットの適用
 npm run format
 ```
-
-
-## 📝 変更履歴
-
-### v1.0.1 (2025-06-10)
-- ✨ CJSからTypeScriptへの完全移行
-- 🔧 Slack Workflow Plus認証の安定化
-- 🧪 DryRunモード（テスト機能）の追加
-- 🎨 カスタムアプリアイコンの実装
-- 🐛 ダイアログ回避とセッション維持の改善
-
-### v1.0.0
-- 🔧 初期機能実装
-- 📱 基本的なJobcan/SlackWF対応
-
 
 ## ⚠️ 免責事項
 
